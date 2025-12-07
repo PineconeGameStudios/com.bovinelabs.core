@@ -70,8 +70,7 @@ namespace BovineLabs.Core.Settings
         }
 
 #if UNITY_EDITOR
-        [InitializeOnLoadMethod]
-        private static void InitializeInEditor()
+        internal static void InitializeInEditor()
         {
             LoadAll();
         }

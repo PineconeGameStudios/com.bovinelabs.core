@@ -16,7 +16,6 @@ namespace BovineLabs.Core.Editor.Welcome
     using UnityEngine.UIElements;
     using EditorSettings = BovineLabs.Core.Editor.Settings.EditorSettings;
 
-    [InitializeOnLoad]
     public class WelcomeWindow : EditorWindow
     {
         private const string ExtensionsEnableKey = "BL_CORE_EXTENSIONS";
@@ -46,7 +45,7 @@ namespace BovineLabs.Core.Editor.Welcome
         private bool installRequestUpdateRegistered;
         private bool hasPackageListResult;
 
-        static WelcomeWindow()
+        internal static void Initialize()
         {
             EditorApplication.delayCall += () =>
             {

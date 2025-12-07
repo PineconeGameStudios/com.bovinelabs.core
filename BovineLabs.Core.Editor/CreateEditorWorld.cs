@@ -9,15 +9,9 @@ namespace BovineLabs.Core.Editor
     using Unity.Entities;
     using UnityEditor;
 
-    [InitializeOnLoad]
-    public static class CreateEditorWorld
+    internal static class CreateEditorWorld
     {
-        static CreateEditorWorld()
-        {
-            _ = Initialize();
-        }
-
-        private static async Task Initialize()
+        internal static async Task Initialize()
         {
             await Task.Yield();
 

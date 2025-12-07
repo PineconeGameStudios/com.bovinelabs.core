@@ -12,10 +12,9 @@ namespace BovineLabs.Core.Editor.ObjectManagement
     using UnityEngine;
     using EditorSettings = BovineLabs.Core.Editor.Settings.EditorSettings;
 
-    [InitializeOnLoad]
-    public static class CreateAssetCreatorDefault
+    internal static class CreateAssetCreatorDefault
     {
-        static CreateAssetCreatorDefault()
+        internal static void Initialize()
         {
             EditorApplication.delayCall += DelayCall;
         }

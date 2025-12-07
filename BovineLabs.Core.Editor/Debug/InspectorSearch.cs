@@ -2,33 +2,42 @@
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
-#if !BL_DISABLE_INSPECTOR_SEARCH
 namespace BovineLabs.Core.Editor
 {
     using System;
     using System.Reflection;
+    using BovineLabs.Core.ConfigVars;
     using BovineLabs.Core.Editor.Inspectors;
     using BovineLabs.Core.Extensions;
+    using Unity.Burst;
     using Unity.Entities.Editor;
     using UnityEditor;
     using UnityEditor.UIElements;
     using UnityEngine.UIElements;
     using Resources = UnityEngine.Resources;
 
-    [InitializeOnLoad]
-    public static class InspectorSearch
+    [Configurable]
+    internal static class InspectorSearch
     {
         private const string SearchClass = "bl-gameobject-inspector__search-field";
-        private static readonly Type InspectorWindowType;
+        [ConfigVar("debug.inspector-search.enabled", true, "Enable the search button in the inspector")]
+        private static readonly SharedStatic<bool> IsEnabled = SharedStatic<bool>.GetOrCreate<IsEnabledType>();
 
-        static InspectorSearch()
+        private static Type inspectorWindowType = null!;
+
+        internal static void Initialize()
         {
-            InspectorWindowType = typeof(EditorWindow).Assembly.GetType("UnityEditor.InspectorWindow");
+            if (!IsEnabled.Data)
+            {
+                return;
+            }
+
+            inspectorWindowType = typeof(EditorWindow).Assembly.GetType("UnityEditor.InspectorWindow");
 
             // Selection.selectionChanged is nicer here, but it fails on domain reload to set itself up
             if (Selection.activeObject)
             {
-                EditorApplication.update += Initialize;
+                EditorApplication.update += Setup;
             }
             else
             {
@@ -36,9 +45,9 @@ namespace BovineLabs.Core.Editor
             }
         }
 
-        private static void Initialize()
+        private static void Setup()
         {
-            var windows = Resources.FindObjectsOfTypeAll(InspectorWindowType);
+            var windows = Resources.FindObjectsOfTypeAll(inspectorWindowType);
 
             // If no windows skip and just wait for selection changes
             var any = windows.Length == 0;
@@ -49,14 +58,14 @@ namespace BovineLabs.Core.Editor
 
             if (any)
             {
-                EditorApplication.update -= Initialize;
+                EditorApplication.update -= Setup;
                 Selection.selectionChanged += SelectionChanged;
             }
         }
 
         private static void SelectionChanged()
         {
-            foreach (var w in Resources.FindObjectsOfTypeAll(InspectorWindowType))
+            foreach (var w in Resources.FindObjectsOfTypeAll(inspectorWindowType))
             {
                 Setup((EditorWindow)w);
             }
@@ -141,6 +150,9 @@ namespace BovineLabs.Core.Editor
             inspector.Add(sfp);
             return true;
         }
+
+        private struct IsEnabledType
+        {
+        }
     }
 }
-#endif
