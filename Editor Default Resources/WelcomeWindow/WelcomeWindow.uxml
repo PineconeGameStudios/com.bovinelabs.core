@@ -18,8 +18,8 @@
         </ui:VisualElement>
         <ui:VisualElement class="bl-tabs">
             <ui:Button text="Overview" name="TabOverview" class="bl-tab bl-tab--active"/>
-            <ui:Button text="Extensions" name="TabExtensions" class="bl-tab"/>
             <ui:Button text="Config" name="TabConfig" class="bl-tab"/>
+            <ui:Button text="Extensions" name="TabExtensions" class="bl-tab"/>
             <ui:Button text="Packages" name="TabPackages" class="bl-tab"/>
         </ui:VisualElement>
         <ui:VisualElement class="bl-tab-panels">
@@ -69,6 +69,28 @@
                     </ui:VisualElement>
                 </ui:VisualElement>
             </ui:ScrollView>
+            <ui:VisualElement name="ContentConfig" class="bl-tab-panel bl-tab-panel--split">
+                <ui:ScrollView class="bl-tab-panel__scroll">
+                    <ui:VisualElement class="bl-card bl-card--feature">
+                        <ui:VisualElement class="bl-card__header">
+                            <ui:Label text="Configuration" class="bl-card__title"/>
+                        </ui:VisualElement>
+                        <ui:Label text="Project-wide preferences." class="bl-card__subtitle"/>
+                        <ui:VisualElement class="bl-feature-list">
+                            <BovineLabs.Core.Editor.Welcome.FeatureToggle text="Menu location" name="MenuLocationToggle" define="BL_TOOLS_MENU" description="Move the menu root from BovineLabs/ to Tools/BovineLabs/"/>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="bl-card bl-card--feature">
+                        <ui:VisualElement class="bl-card__header">
+                            <ui:Label text="Local configuration" class="bl-card__title"/>
+                        </ui:VisualElement>
+                        <ui:Label text="Per-machine preferences stored via ConfigVars." class="bl-card__subtitle"/>
+                        <ui:VisualElement class="bl-feature-list">
+                            <BovineLabs.Core.Editor.Welcome.FeatureToggle text="Inspector search" name="InspectorSearchToggle" description="Enable the search button in the inspector"/>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:ScrollView>
+            </ui:VisualElement>
             <ui:VisualElement name="ContentExtensions" class="bl-tab-panel bl-tab-panel--split">
                 <ui:ScrollView class="bl-tab-panel__scroll">
                     <ui:VisualElement class="bl-card bl-card--feature">
@@ -95,19 +117,6 @@
                     <ui:Label text="Apply to update scripting define symbols. Unity will reload scripts if needed." class="bl-apply__note"/>
                     <ui:Button text="Apply Changes" name="ApplyChanges" class="bl-button bl-button--primary bl-button--block"/>
                 </ui:VisualElement>
-            </ui:VisualElement>
-            <ui:VisualElement name="ContentConfig" class="bl-tab-panel bl-tab-panel--split">
-                <ui:ScrollView class="bl-tab-panel__scroll">
-                    <ui:VisualElement class="bl-card bl-card--feature">
-                        <ui:VisualElement class="bl-card__header">
-                            <ui:Label text="Configuration" class="bl-card__title"/>
-                        </ui:VisualElement>
-                        <ui:Label text="Project-wide BovineLabs editor preferences." class="bl-card__subtitle"/>
-                        <ui:VisualElement class="bl-feature-list">
-                            <BovineLabs.Core.Editor.Welcome.FeatureToggle text="Menu location" name="MenuLocationToggle" define="BL_TOOLS_MENU" description="Move the menu root from BovineLabs/ to Tools/BovineLabs/"/>
-                        </ui:VisualElement>
-                    </ui:VisualElement>
-                </ui:ScrollView>
             </ui:VisualElement>
             <ui:ScrollView name="ContentPackages" class="bl-tab-panel">
                 <ui:VisualElement class="bl-card bl-card--feature">

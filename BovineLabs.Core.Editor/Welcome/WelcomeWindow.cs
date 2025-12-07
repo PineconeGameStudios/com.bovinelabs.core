@@ -7,8 +7,11 @@ namespace BovineLabs.Core.Editor.Welcome
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using BovineLabs.Core.ConfigVars;
+    using BovineLabs.Core.Editor.ConfigVars;
     using BovineLabs.Core.Editor.Settings;
     using BovineLabs.Core.Editor.UI;
+    using Unity.Burst;
     using UnityEditor;
     using UnityEditor.PackageManager;
     using UnityEditor.PackageManager.Requests;
@@ -22,6 +25,7 @@ namespace BovineLabs.Core.Editor.Welcome
         private const string PhysicsStatesDefine = "BL_DISABLE_PHYSICS_STATES";
         private const string PhysicsUpdateDefine = "BL_DISABLE_PHYSICS_ALWAYS_UPDATE";
         private const string ToolsMenuDefine = "BL_TOOLS_MENU";
+        private const string InspectorSearchConfigVarName = "debug.inspector-search.enabled";
         private const string ExtensionsDisabledClass = "bl-button--danger";
         private const string DiscordUrl = "https://discord.gg/2Y6eQ76AUV";
         private const string ReadmeUrl = "https://gitlab.com/tertle/com.bovinelabs.core/-/blob/master/README.md";
@@ -38,6 +42,7 @@ namespace BovineLabs.Core.Editor.Welcome
 
         private Button enableExtensionsButton = null!;
         private FeatureToggle menuLocationToggle = null!;
+        private FeatureToggle inspectorSearchToggle = null!;
         private ListRequest? packageListRequest;
         private bool extensionsSupported;
         private bool extensionsEnabled;
@@ -230,12 +235,42 @@ namespace BovineLabs.Core.Editor.Welcome
 
         private void SetupConfiguration(VisualElement root)
         {
+            this.SetupProjectConfiguration(root);
+            this.SetupLocalConfiguration(root);
+        }
+
+        private void SetupProjectConfiguration(VisualElement root)
+        {
             this.menuLocationToggle = root.Q<FeatureToggle>("MenuLocationToggle") ?? throw new InvalidOperationException("Missing MenuLocationToggle toggle.");
             var toggle = this.menuLocationToggle.Q<Toggle>(className: FeatureToggle.FeatureToggleUssClassName) ?? throw new InvalidOperationException("Missing toggle for menu location.");
             var useToolsMenu = this.defines.Contains(ToolsMenuDefine);
             this.menuLocationToggle.SetFeatureEnabledWithoutNotify(useToolsMenu);
             toggle.tooltip = "Move the BovineLabs menu under Tools/BovineLabs/ by setting BL_TOOLS_MENU.";
             toggle.RegisterValueChangedCallback(evt => this.OnMenuLocationToggled(evt.newValue));
+        }
+
+        private void SetupLocalConfiguration(VisualElement root)
+        {
+            this.inspectorSearchToggle = root.Q<FeatureToggle>("InspectorSearchToggle") ?? throw new InvalidOperationException("Missing InspectorSearchToggle toggle.");
+            var toggle = this.inspectorSearchToggle.Q<Toggle>(className: FeatureToggle.FeatureToggleUssClassName)
+                         ?? throw new InvalidOperationException("Missing toggle for inspector search.");
+
+            if (!this.TryCreateConfigVarBinding(toggle, InspectorSearchConfigVarName, out var binding, out var configVarDescription))
+            {
+                const string missingTooltip = "Inspector search config var not found.";
+                toggle.SetEnabled(false);
+                toggle.tooltip = missingTooltip;
+                this.inspectorSearchToggle.tooltip = missingTooltip;
+                this.inspectorSearchToggle.SetFeatureEnabledWithoutNotify(false);
+                return;
+            }
+
+            toggle.tooltip = string.IsNullOrEmpty(configVarDescription) ? toggle.tooltip : configVarDescription;
+            toggle.binding = binding;
+            var initialValue = binding.Value;
+            toggle.value = initialValue;
+            this.inspectorSearchToggle.SetFeatureEnabledWithoutNotify(initialValue);
+            toggle.RegisterValueChangedCallback(evt => this.inspectorSearchToggle.SetFeatureEnabledWithoutNotify(evt.newValue));
         }
 
         private static void SetupLinks(VisualElement root)
@@ -756,6 +791,31 @@ namespace BovineLabs.Core.Editor.Welcome
 
             tooltip = string.Empty;
             return true;
+        }
+
+        private bool TryCreateConfigVarBinding(BaseField<bool> field, string configVarName, out IConfigVarBinding<bool> binding, out string configVarDescription)
+        {
+            foreach (var (configVar, fieldInfo) in ConfigVarManager.FindAllConfigVars())
+            {
+                if (!string.Equals(configVar.Name, configVarName, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                configVarDescription = configVar.Description;
+
+                if (fieldInfo.GetValue(null) is SharedStatic<bool> sharedStatic)
+                {
+                    binding = new ConfigVarBinding<bool>(field, configVar, sharedStatic);
+                    return true;
+                }
+
+                break;
+            }
+
+            configVarDescription = string.Empty;
+            binding = null!;
+            return false;
         }
 
         private class PackageState
