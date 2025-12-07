@@ -22,11 +22,12 @@ namespace BovineLabs.Core.Editor.Welcome
         private const string ExtensionsEnableKey = "BL_CORE_EXTENSIONS";
         private const string PhysicsStatesDefine = "BL_DISABLE_PHYSICS_STATES";
         private const string PhysicsUpdateDefine = "BL_DISABLE_PHYSICS_ALWAYS_UPDATE";
+        private const string ToolsMenuDefine = "BL_TOOLS_MENU";
         private const string ExtensionsDisabledClass = "bl-button--danger";
         private const string DiscordUrl = "https://discord.gg/2Y6eQ76AUV";
         private const string ReadmeUrl = "https://gitlab.com/tertle/com.bovinelabs.core/-/blob/master/README.md";
         private const string SessionStartupShownKey = "BovineLabs.Core.WelcomeWindow.StartupShown";
-        private static readonly IReadOnlyList<string> Tabs = new[] { "Overview", "Extensions", "Packages" };
+        private static readonly IReadOnlyList<string> Tabs = new[] { "Overview", "Extensions", "Config", "Packages" };
         private static readonly UITemplate Window = new("Packages/com.bovinelabs.core/Editor Default Resources/WelcomeWindow/WelcomeWindow");
 
         private readonly List<string> defines = new();
@@ -34,9 +35,10 @@ namespace BovineLabs.Core.Editor.Welcome
         private readonly List<FeatureEntry> featureToggles = new();
         private readonly List<PackageState> packages = new();
         private readonly Dictionary<string, PackageState> packageLookup = new(StringComparer.OrdinalIgnoreCase);
+        private readonly List<Button> applyButtons = new();
 
         private Button enableExtensionsButton = null!;
-        private Button applyButton = null!;
+        private FeatureToggle menuLocationToggle = null!;
         private ListRequest? packageListRequest;
         private bool extensionsSupported;
         private bool extensionsEnabled;
@@ -81,6 +83,7 @@ namespace BovineLabs.Core.Editor.Welcome
             this.defines.AddRange(EditorSettingsUtility.GetSettings<EditorSettings>().ScriptingDefineSymbols);
             this.initialDefines.Clear();
             this.initialDefines.AddRange(this.defines);
+            this.applyButtons.Clear();
 
             var preferences = WelcomePreferences.Get();
             preferences.WelcomePopupAlreadyShownOnce = true;
@@ -92,6 +95,7 @@ namespace BovineLabs.Core.Editor.Welcome
 
             SetupTabs(root);
             this.SetupExtensions(root);
+            this.SetupConfiguration(root);
             SetupLinks(root);
             this.SetupPackages(root);
         }
@@ -120,6 +124,7 @@ namespace BovineLabs.Core.Editor.Welcome
 
             this.packages.Clear();
             this.packageLookup.Clear();
+            this.applyButtons.Clear();
         }
 
         private static void SetupTabs(VisualElement root)
@@ -149,14 +154,31 @@ namespace BovineLabs.Core.Editor.Welcome
             }
         }
 
+        private void SetupApplyButtons(VisualElement root)
+        {
+            this.applyButtons.Clear();
+            this.applyButtons.AddRange(root.Query<Button>("ApplyChanges").ToList());
+
+            if (this.applyButtons.Count == 0)
+            {
+                throw new InvalidOperationException("Missing ApplyChanges button.");
+            }
+
+            foreach (var button in this.applyButtons)
+            {
+                button.clicked += this.UpdateScriptingDefines;
+            }
+        }
+
         private void SetupExtensions(VisualElement root)
         {
             this.enableExtensionsButton = root.Q<Button>("EnableExtensions") ?? throw new InvalidOperationException("Missing EnableExtensions button.");
-            this.applyButton = root.Q<Button>("ApplyChanges") ?? throw new InvalidOperationException("Missing ApplyChanges button.");
-
+            var extensionsRoot = root.Q<VisualElement>("ContentExtensions") ?? throw new InvalidOperationException("Missing ContentExtensions container.");
             this.featureToggles.Clear();
 
-            foreach (var featureToggle in root.Query<FeatureToggle>().ToList())
+            this.SetupApplyButtons(extensionsRoot);
+
+            foreach (var featureToggle in extensionsRoot.Query<FeatureToggle>().ToList())
             {
                 if (string.IsNullOrWhiteSpace(featureToggle.Define))
                 {
@@ -192,7 +214,6 @@ namespace BovineLabs.Core.Editor.Welcome
             }
 
             this.enableExtensionsButton.clicked += this.ToggleExtensions;
-            this.applyButton.clicked += this.UpdateScriptingDefines;
 
             this.extensionsSupported = IsExtensionsSupported();
 
@@ -206,6 +227,16 @@ namespace BovineLabs.Core.Editor.Welcome
             this.UpdateExtensionsButtonText();
             this.SyncFeaturesToDefines(this.extensionsEnabled);
             this.UpdateApplyButtonState();
+        }
+
+        private void SetupConfiguration(VisualElement root)
+        {
+            this.menuLocationToggle = root.Q<FeatureToggle>("MenuLocationToggle") ?? throw new InvalidOperationException("Missing MenuLocationToggle toggle.");
+            var toggle = this.menuLocationToggle.Q<Toggle>(className: FeatureToggle.FeatureToggleUssClassName) ?? throw new InvalidOperationException("Missing toggle for menu location.");
+            var useToolsMenu = this.defines.Contains(ToolsMenuDefine);
+            this.menuLocationToggle.SetFeatureEnabledWithoutNotify(useToolsMenu);
+            toggle.tooltip = "Move the BovineLabs menu under Tools/BovineLabs/ by setting BL_TOOLS_MENU.";
+            toggle.RegisterValueChangedCallback(evt => this.OnMenuLocationToggled(evt.newValue));
         }
 
         private static void SetupLinks(VisualElement root)
@@ -537,6 +568,25 @@ namespace BovineLabs.Core.Editor.Welcome
             this.UpdateApplyButtonState();
         }
 
+        private void OnMenuLocationToggled(bool useToolsMenu)
+        {
+            if (useToolsMenu)
+            {
+                if (!this.defines.Contains(ToolsMenuDefine))
+                {
+                    this.defines.Add(ToolsMenuDefine);
+                }
+            }
+            else
+            {
+                this.defines.Remove(ToolsMenuDefine);
+            }
+
+            this.ApplyDefineImmediate(ToolsMenuDefine, useToolsMenu);
+            this.SyncInitialDefine(ToolsMenuDefine, useToolsMenu);
+            this.UpdateApplyButtonState();
+        }
+
         private void UpdateScriptingDefines()
         {
             var settings = EditorSettingsUtility.GetSettings<EditorSettings>();
@@ -613,9 +663,12 @@ namespace BovineLabs.Core.Editor.Welcome
         {
             var hasPendingChanges = this.HasPendingChanges();
 
-            this.applyButton.SetEnabled(hasPendingChanges);
-            this.applyButton.EnableInClassList("bl-button--primary", hasPendingChanges);
-            this.applyButton.EnableInClassList("bl-button--muted", !hasPendingChanges);
+            foreach (var applyButton in this.applyButtons)
+            {
+                applyButton.SetEnabled(hasPendingChanges);
+                applyButton.EnableInClassList("bl-button--primary", hasPendingChanges);
+                applyButton.EnableInClassList("bl-button--muted", !hasPendingChanges);
+            }
         }
 
         private bool HasPendingChanges()
@@ -640,6 +693,44 @@ namespace BovineLabs.Core.Editor.Welcome
         {
             this.initialDefines.Clear();
             this.initialDefines.AddRange(this.defines);
+        }
+
+        private void ApplyDefineImmediate(string define, bool enabled)
+        {
+            var settings = EditorSettingsUtility.GetSettings<EditorSettings>();
+            var so = new SerializedObject(settings);
+            var property = so.FindProperty("scriptingDefineSymbols");
+
+            if (enabled)
+            {
+                AddDefine(property, define);
+            }
+            else
+            {
+                RemoveDefine(property, define);
+            }
+
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            var add = enabled ? new List<string> { define } : new List<string>();
+            var remove = enabled ? new List<string>() : new List<string> { define };
+
+            ScriptingDefineSymbolsEditor.ApplyDefinesToAll(add, remove);
+        }
+
+        private void SyncInitialDefine(string define, bool enabled)
+        {
+            if (enabled)
+            {
+                if (!this.initialDefines.Contains(define))
+                {
+                    this.initialDefines.Add(define);
+                }
+            }
+            else
+            {
+                this.initialDefines.Remove(define);
+            }
         }
 
         private static bool IsExtensionsSupported()
