@@ -19,8 +19,10 @@ namespace BovineLabs.Core.Editor
     [Configurable]
     internal static class InspectorSearch
     {
+        public const string Key = "core.inspector-search.enabled";
+
         private const string SearchClass = "bl-gameobject-inspector__search-field";
-        [ConfigVar("debug.inspector-search.enabled", true, "Enable the search button in the inspector")]
+        [ConfigVar(Key, true, "Enable the search button in the inspector")]
         private static readonly SharedStatic<bool> IsEnabled = SharedStatic<bool>.GetOrCreate<IsEnabledType>();
 
         private static Type inspectorWindowType = null!;

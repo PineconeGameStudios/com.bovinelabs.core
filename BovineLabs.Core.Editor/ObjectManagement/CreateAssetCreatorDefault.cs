@@ -24,10 +24,11 @@ namespace BovineLabs.Core.Editor.ObjectManagement
             // Stop auto creating settings
             if (!EditorSettingsUtility.TryGetSettings<EditorSettings>(out _))
             {
+                // This should only happen on first installation of Core, once setup it should always find EditorSettings
+                EditorApplication.delayCall += DelayCall;
                 return;
             }
 
-            // TODO this actually means it won't create null assets until after a domain reload and there is a chance a user could create an asset before then
             CreateDefaults();
         }
 

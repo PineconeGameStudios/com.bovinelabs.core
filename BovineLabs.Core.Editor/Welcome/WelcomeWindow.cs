@@ -25,7 +25,6 @@ namespace BovineLabs.Core.Editor.Welcome
         private const string PhysicsStatesDefine = "BL_DISABLE_PHYSICS_STATES";
         private const string PhysicsUpdateDefine = "BL_DISABLE_PHYSICS_ALWAYS_UPDATE";
         private const string ToolsMenuDefine = "BL_TOOLS_MENU";
-        private const string InspectorSearchConfigVarName = "debug.inspector-search.enabled";
         private const string ExtensionsDisabledClass = "bl-button--danger";
         private const string DiscordUrl = "https://discord.gg/2Y6eQ76AUV";
         private const string ReadmeUrl = "https://gitlab.com/tertle/com.bovinelabs.core/-/blob/master/README.md";
@@ -255,7 +254,7 @@ namespace BovineLabs.Core.Editor.Welcome
             var toggle = this.inspectorSearchToggle.Q<Toggle>(className: FeatureToggle.FeatureToggleUssClassName)
                          ?? throw new InvalidOperationException("Missing toggle for inspector search.");
 
-            if (!this.TryCreateConfigVarBinding(toggle, InspectorSearchConfigVarName, out var binding, out var configVarDescription))
+            if (!this.TryCreateConfigVarBinding(toggle, InspectorSearch.Key, out var binding, out var configVarDescription))
             {
                 const string missingTooltip = "Inspector search config var not found.";
                 toggle.SetEnabled(false);
