@@ -56,14 +56,12 @@
 }
 
 .search {
-    border-left-color: rgb(127, 127, 127);
-    border-right-color: rgb(127, 127, 127);
-    border-top-color: rgb(127, 127, 127);
-    border-bottom-color: rgb(127, 127, 127);
-    border-top-width: 1px;
-    border-right-width: 1px;
-    border-bottom-width: 1px;
-    border-left-width: 1px;
+    background-color: rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    padding: 2px 3px;
+}
+.unity-theme-light .search {
+    background-color: rgba(0, 0, 0, 0.08);
 }
 .config-var__field {
     padding: 2px 2px;
