@@ -21,7 +21,7 @@ namespace BovineLabs.Core.Editor.ConfigVars
     public sealed class ConfigVarPanel : ISettingsPanel
     {
         private const string FieldClassName = "config-var__field";
-        private const string HighlightClassName = "config-var__highlight";
+        private const string HighlightClassName = "search";
         private const string ReadOnlyClassName = "config-var__readonly";
 
         /// <summary> Initializes a new instance of the <see cref="ConfigVarPanel" /> class. </summary>
