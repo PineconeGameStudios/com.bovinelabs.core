@@ -13,6 +13,14 @@ namespace BovineLabs.Core.Editor
     {
         internal static async Task Initialize()
         {
+            EditorApplication.playModeStateChanged += change =>
+            {
+                if (change == PlayModeStateChange.EnteredEditMode)
+                {
+                    DefaultWorldInitialization.DefaultLazyEditModeInitialize();
+                }
+            };
+
             await Task.Yield();
 
             DefaultWorldInitialization.DefaultLazyEditModeInitialize();
