@@ -6,6 +6,7 @@ namespace BovineLabs.Core.Utility
 {
     using System;
     using System.Runtime.InteropServices;
+    using Unity;
     using Unity.Burst;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
@@ -119,6 +120,9 @@ namespace BovineLabs.Core.Utility
                 // Pool is full, dispose the list instead
                 byteList.Dispose();
             }
+
+            this.list = default;
+            this.oldHandle = default;
         }
     }
 
@@ -170,6 +174,11 @@ namespace BovineLabs.Core.Utility
 
             public ref UnsafeList<NativeList<byte>> GetThreadList()
             {
+#if UNITY_EDITOR
+                UnityEngine.Debug.Assert(JobsUtility.IsExecutingJob || UnityEditorInternal.InternalEditorUtility.CurrentThreadIsMainThread(),
+                    "Can only be used on main or worker threads");
+#endif
+
                 ref var list = ref UnsafeUtility.ArrayElementAsRef<ThreadData>(this.buffer, JobsUtility.ThreadIndex);
                 return ref list.ThreadList;
             }
