@@ -9,6 +9,7 @@ namespace BovineLabs.Core.Tests.Iterators
     using BovineLabs.Core.Utility;
     using BovineLabs.Testing;
     using NUnit.Framework;
+    using Unity.Collections.LowLevel.Unsafe;
     using Unity.Entities;
     using Unity.Mathematics;
 
@@ -215,6 +216,44 @@ namespace BovineLabs.Core.Tests.Iterators
             Assert.AreEqual(444UL, large1.TestValue1);
         }
 
+        [Test]
+        public unsafe void KeysPointer_IsAlignedToKeyType_LongKey_DefaultInit()
+        {
+            var entity = this.Manager.CreateEntity(typeof(TestBufferLongKey));
+            var buffer = this.Manager.GetBuffer<TestBufferLongKey>(entity);
+
+            var hashMap = buffer.InitializeUntypedHashMap<TestBufferLongKey, long>().AsUntypedHashMap<TestBufferLongKey, long>();
+
+            var helper = hashMap.Helper;
+            var align = UnsafeUtility.AlignOf<long>();
+            var keysPtr = (ulong)helper->Keys;
+            Assert.AreEqual(0u, keysPtr % (ulong)align);
+        }
+
+        [Test]
+        public unsafe void LargeValuePointer_IsAligned_WhenMixedLargeTypes()
+        {
+            var entity = this.Manager.CreateEntity(typeof(TestBuffer));
+            var buffer = this.Manager.GetBuffer<TestBuffer>(entity);
+
+            var hashMap = buffer.InitializeUntypedHashMap<TestBuffer, int>().AsUntypedHashMap<TestBuffer, int>();
+
+            // float3 is 12 bytes (3 ints). Large is 16 bytes and requires 8-byte alignment.
+            // Without alignment, the Large allocation can start at an odd int index and become misaligned.
+            hashMap.AddOrSet(1, new float3(1, 2, 3));
+            hashMap.AddOrSet(2, new Large { TestValue0 = 10, TestValue1 = 20 });
+
+            var helper = hashMap.Helper;
+            var idx = helper->Find(2);
+            Assert.AreNotEqual(-1, idx);
+
+            var offset = *((int*)helper->Values + idx);
+            var ptr = (byte*)(helper->Data + offset);
+
+            var align = UnsafeUtility.AlignOf<Large>();
+            Assert.AreEqual(0u, ((ulong)ptr) % (ulong)align);
+        }
+
 #if ENABLE_UNITY_COLLECTIONS_CHECKS || UNITY_DOTS_DEBUG
         [Test]
         public void GetOrAddRef_WhenTypeDoesNotMatch_Throws()
@@ -237,6 +276,12 @@ namespace BovineLabs.Core.Tests.Iterators
         private struct TestBuffer : IDynamicUntypedHashMap<int>
         {
             byte IDynamicUntypedHashMap<int>.Value { get; }
+        }
+
+        [InternalBufferCapacity(0)]
+        private struct TestBufferLongKey : IDynamicUntypedHashMap<long>
+        {
+            byte IDynamicUntypedHashMap<long>.Value { get; }
         }
 
         public struct Large
