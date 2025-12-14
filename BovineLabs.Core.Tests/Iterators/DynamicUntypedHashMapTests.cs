@@ -48,7 +48,7 @@ namespace BovineLabs.Core.Tests.Iterators
             var entity = this.Manager.CreateEntity(typeof(TestBuffer));
             var buffer = this.Manager.GetBuffer<TestBuffer>(entity);
 
-            var hashMap = buffer.InitializeUntypedHashMap<TestBuffer, int>(0).AsUntypedHashMap<TestBuffer, int>();
+            var hashMap = buffer.InitializeUntypedHashMap<TestBuffer, int>().AsUntypedHashMap<TestBuffer, int>();
 
             for (var i = 0; i < 50; i++)
             {
