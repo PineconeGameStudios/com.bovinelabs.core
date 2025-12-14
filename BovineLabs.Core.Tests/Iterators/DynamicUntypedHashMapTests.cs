@@ -48,7 +48,7 @@ namespace BovineLabs.Core.Tests.Iterators
             var entity = this.Manager.CreateEntity(typeof(TestBuffer));
             var buffer = this.Manager.GetBuffer<TestBuffer>(entity);
 
-            var hashMap = buffer.InitializeUntypedHashMap<TestBuffer, int>(0, 0).AsUntypedHashMap<TestBuffer, int>();
+            var hashMap = buffer.InitializeUntypedHashMap<TestBuffer, int>(0).AsUntypedHashMap<TestBuffer, int>();
 
             for (var i = 0; i < 50; i++)
             {
@@ -81,7 +81,7 @@ namespace BovineLabs.Core.Tests.Iterators
             var entity = this.Manager.CreateEntity(typeof(TestBuffer));
             var buffer = this.Manager.GetBuffer<TestBuffer>(entity);
 
-            var hashMap = buffer.InitializeUntypedHashMap<TestBuffer, int>(0, 0).AsUntypedHashMap<TestBuffer, int>();
+            var hashMap = buffer.InitializeUntypedHashMap<TestBuffer, int>().AsUntypedHashMap<TestBuffer, int>();
 
             for (var i = 0; i < 50; i++)
             {
@@ -117,10 +117,10 @@ namespace BovineLabs.Core.Tests.Iterators
             var hashMap = buffer.InitializeUntypedHashMap<TestBuffer, int>().AsUntypedHashMap<TestBuffer, int>();
 
             Assert.IsFalse(hashMap.TryGetValue(123, out int value));
-            Assert.AreEqual(default, value);
+            Assert.AreEqual(0, value);
 
             Assert.IsFalse(hashMap.TryGetValue(123, out Large large));
-            Assert.AreEqual(default, large);
+            Assert.AreEqual(default(Large), large);
         }
 
         [Test]
@@ -143,8 +143,8 @@ namespace BovineLabs.Core.Tests.Iterators
             Assert.AreEqual((ulong)(2000 + (count - 1)), last.TestValue1);
 
             Assert.IsTrue(hashMap.TryGetValue(64, out Large boundary));
-            Assert.AreEqual((ulong)1064, boundary.TestValue0);
-            Assert.AreEqual((ulong)2064, boundary.TestValue1);
+            Assert.AreEqual(1064UL, boundary.TestValue0);
+            Assert.AreEqual(2064UL, boundary.TestValue1);
         }
 
         [Test]
@@ -160,8 +160,8 @@ namespace BovineLabs.Core.Tests.Iterators
             hashMap.AddOrSet(key, new Large { TestValue0 = 3, TestValue1 = 4 });
 
             Assert.IsTrue(hashMap.TryGetValue(key, out Large value));
-            Assert.AreEqual((ulong)3, value.TestValue0);
-            Assert.AreEqual((ulong)4, value.TestValue1);
+            Assert.AreEqual(3UL, value.TestValue0);
+            Assert.AreEqual(4UL, value.TestValue1);
         }
 
         [Test]
@@ -179,8 +179,8 @@ namespace BovineLabs.Core.Tests.Iterators
             value.TestValue1 = 456;
 
             Assert.IsTrue(hashMap.TryGetValue(key, out Large stored));
-            Assert.AreEqual((ulong)123, stored.TestValue0);
-            Assert.AreEqual((ulong)456, stored.TestValue1);
+            Assert.AreEqual(123UL, stored.TestValue0);
+            Assert.AreEqual(456UL, stored.TestValue1);
         }
 
         [Test]
@@ -207,12 +207,12 @@ namespace BovineLabs.Core.Tests.Iterators
             Assert.AreEqual(127, last);
 
             Assert.IsTrue(hashMap.TryGetValue(1000, out Large large0));
-            Assert.AreEqual((ulong)111, large0.TestValue0);
-            Assert.AreEqual((ulong)222, large0.TestValue1);
+            Assert.AreEqual(111UL, large0.TestValue0);
+            Assert.AreEqual(222UL, large0.TestValue1);
 
             Assert.IsTrue(hashMap.TryGetValue(1001, out Large large1));
-            Assert.AreEqual((ulong)333, large1.TestValue0);
-            Assert.AreEqual((ulong)444, large1.TestValue1);
+            Assert.AreEqual(333UL, large1.TestValue0);
+            Assert.AreEqual(444UL, large1.TestValue1);
         }
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS || UNITY_DOTS_DEBUG
