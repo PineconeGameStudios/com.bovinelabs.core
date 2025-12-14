@@ -203,12 +203,24 @@ namespace BovineLabs.Core.Tests.Iterators
 
             var expectedInt = new Dictionary<int, int>();
             var expectedFloat3 = new Dictionary<int, float3>();
+            var expectedKind = new Dictionary<int, byte>();
 
             var random = new Random(12345);
             for (var i = 0; i < operations; i++)
             {
                 var key = random.NextInt(0, keySpace);
                 var doInt = (random.NextInt() & 1) == 0;
+
+                // DynamicUntypedHashMap stores a single type per key; once set, the key's type cannot change.
+                // To stress valid behavior, pick a type the first time a key is seen and keep it stable.
+                if (expectedKind.TryGetValue(key, out var kind))
+                {
+                    doInt = kind == 0;
+                }
+                else
+                {
+                    expectedKind.Add(key, (byte)(doInt ? 0 : 1));
+                }
 
                 if (doInt)
                 {
@@ -275,4 +287,3 @@ namespace BovineLabs.Core.Tests.Iterators
         }
     }
 }
-
