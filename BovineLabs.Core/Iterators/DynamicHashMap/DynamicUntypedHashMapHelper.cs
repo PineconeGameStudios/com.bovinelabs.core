@@ -234,12 +234,12 @@ namespace BovineLabs.Core.Iterators
         internal static void ResizeData(DynamicBuffer<byte> buffer, ref DynamicUntypedHashMapHelper<TKey>* data, int newCapacity)
         {
             // This hashmap doesn't allow shrinking
-            if (newCapacity < data->DataCapacity)
+            if (newCapacity <= data->DataCapacity)
             {
                 return;
             }
 
-            var toAllocate = (newCapacity - data->Capacity) * sizeof(int);
+            var toAllocate = (newCapacity - data->DataCapacity) * sizeof(int);
 
             // As data is stored at end of buffer, we just need to increase buffer capacity size
             var newBufferCapacity = buffer.Length + toAllocate;
@@ -292,8 +292,10 @@ namespace BovineLabs.Core.Iterators
                 // Sets don't need to allocate, element should already exist
                 if (add)
                 {
-                    var minNewCapacity = (data->DataAllocatedIndex * sizeof(int)) + sizeof(TValue);
-                    if (minNewCapacity > data->DataCapacity * sizeof(int))
+                    Check.Assume(sizeof(TValue) % sizeof(int) == 0);
+
+                    var minNewCapacity = data->DataAllocatedIndex + (sizeof(TValue) / sizeof(int));
+                    if (minNewCapacity > data->DataCapacity)
                     {
                         var newCap = data->DataCapacity;
                         do
@@ -310,7 +312,6 @@ namespace BovineLabs.Core.Iterators
                     var dst = (int*)data->Values + idx;
                     *dst = data->DataAllocatedIndex;
 
-                    Check.Assume(sizeof(TValue) % sizeof(int) == 0);
                     data->DataAllocatedIndex += sizeof(TValue) / sizeof(int);
                 }
                 else
@@ -375,13 +376,15 @@ namespace BovineLabs.Core.Iterators
             var isLarge = sizeof(TValue) > sizeof(int);
             if (isLarge)
             {
-                var minNewCapacity = (data->DataAllocatedIndex * sizeof(int)) + sizeof(TValue);
-                if (minNewCapacity > data->DataCapacity * sizeof(int))
+                Check.Assume(sizeof(TValue) % sizeof(int) == 0);
+
+                var minNewCapacity = data->DataAllocatedIndex + (sizeof(TValue) / sizeof(int));
+                if (minNewCapacity > data->DataCapacity)
                 {
                     var newCap = data->DataCapacity;
                     do
                     {
-                        newCap += CalcCapacityCeilPow2(newCap + (1 << data->Log2MinGrowth), data->Log2MinGrowth);
+                        newCap = CalcCapacityCeilPow2(newCap + (1 << data->Log2MinGrowth), data->Log2MinGrowth);
                     }
                     while (newCap < minNewCapacity);
 
@@ -390,8 +393,6 @@ namespace BovineLabs.Core.Iterators
 
                 var ptr = data->Data + data->DataAllocatedIndex;
                 UnsafeUtility.MemCpy(ptr, &value, sizeof(TValue));
-
-                Check.Assume(sizeof(TValue) % sizeof(int) == 0);
 
                 var dst = (int*)data->Values + idx;
                 *dst = data->DataAllocatedIndex;

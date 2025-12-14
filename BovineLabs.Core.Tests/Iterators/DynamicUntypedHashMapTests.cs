@@ -4,6 +4,7 @@
 
 namespace BovineLabs.Core.Tests.Iterators
 {
+    using System;
     using BovineLabs.Core.Iterators;
     using BovineLabs.Core.Utility;
     using BovineLabs.Testing;
@@ -106,6 +107,131 @@ namespace BovineLabs.Core.Tests.Iterators
                 hashMap.GetOrAddRef((i * 8) + 7, (short)2);
             }
         }
+
+        [Test]
+        public void TryGetValue_WhenMissing_ReturnsFalseAndDefault()
+        {
+            var entity = this.Manager.CreateEntity(typeof(TestBuffer));
+            var buffer = this.Manager.GetBuffer<TestBuffer>(entity);
+
+            var hashMap = buffer.InitializeUntypedHashMap<TestBuffer, int>().AsUntypedHashMap<TestBuffer, int>();
+
+            Assert.IsFalse(hashMap.TryGetValue(123, out int value));
+            Assert.AreEqual(default, value);
+
+            Assert.IsFalse(hashMap.TryGetValue(123, out Large large));
+            Assert.AreEqual(default, large);
+        }
+
+        [Test]
+        public void TryGetValue_LargeValueOffsetBeyond255_Works()
+        {
+            var entity = this.Manager.CreateEntity(typeof(TestBuffer));
+            var buffer = this.Manager.GetBuffer<TestBuffer>(entity);
+
+            var hashMap = buffer.InitializeUntypedHashMap<TestBuffer, int>().AsUntypedHashMap<TestBuffer, int>();
+
+            // Large is 16 bytes = 4 ints, so after 64 inserts the DataAllocatedIndex exceeds 255 and will have non-trivial high bytes.
+            const int count = 70;
+            for (var i = 0; i < count; i++)
+            {
+                hashMap.AddOrSet(i, new Large { TestValue0 = (ulong)(1000 + i), TestValue1 = (ulong)(2000 + i) });
+            }
+
+            Assert.IsTrue(hashMap.TryGetValue(count - 1, out Large last));
+            Assert.AreEqual((ulong)(1000 + (count - 1)), last.TestValue0);
+            Assert.AreEqual((ulong)(2000 + (count - 1)), last.TestValue1);
+
+            Assert.IsTrue(hashMap.TryGetValue(64, out Large boundary));
+            Assert.AreEqual((ulong)1064, boundary.TestValue0);
+            Assert.AreEqual((ulong)2064, boundary.TestValue1);
+        }
+
+        [Test]
+        public void AddOrSet_LargeValue_OverwritesExisting()
+        {
+            var entity = this.Manager.CreateEntity(typeof(TestBuffer));
+            var buffer = this.Manager.GetBuffer<TestBuffer>(entity);
+
+            var hashMap = buffer.InitializeUntypedHashMap<TestBuffer, int>().AsUntypedHashMap<TestBuffer, int>();
+
+            const int key = 10;
+            hashMap.AddOrSet(key, new Large { TestValue0 = 1, TestValue1 = 2 });
+            hashMap.AddOrSet(key, new Large { TestValue0 = 3, TestValue1 = 4 });
+
+            Assert.IsTrue(hashMap.TryGetValue(key, out Large value));
+            Assert.AreEqual((ulong)3, value.TestValue0);
+            Assert.AreEqual((ulong)4, value.TestValue1);
+        }
+
+        [Test]
+        public void GetOrAddRef_LargeValue_AllowsMutationByRef()
+        {
+            var entity = this.Manager.CreateEntity(typeof(TestBuffer));
+            var buffer = this.Manager.GetBuffer<TestBuffer>(entity);
+
+            var hashMap = buffer.InitializeUntypedHashMap<TestBuffer, int>().AsUntypedHashMap<TestBuffer, int>();
+
+            const int key = 42;
+
+            ref var value = ref hashMap.GetOrAddRef(key, default(Large));
+            value.TestValue0 = 123;
+            value.TestValue1 = 456;
+
+            Assert.IsTrue(hashMap.TryGetValue(key, out Large stored));
+            Assert.AreEqual((ulong)123, stored.TestValue0);
+            Assert.AreEqual((ulong)456, stored.TestValue1);
+        }
+
+        [Test]
+        public void ResizeData_WhenCapacityExceedsDataCapacity_DoesNotCorrupt()
+        {
+            var entity = this.Manager.CreateEntity(typeof(TestBuffer));
+            var buffer = this.Manager.GetBuffer<TestBuffer>(entity);
+
+            // Start tiny so Capacity grows via Resize while DataCapacity remains at the original initialization size.
+            var hashMap = buffer.InitializeUntypedHashMap<TestBuffer, int>(1).AsUntypedHashMap<TestBuffer, int>();
+
+            for (var i = 0; i < 128; i++)
+            {
+                hashMap.AddOrSet(i, i);
+            }
+
+            hashMap.AddOrSet(1000, new Large { TestValue0 = 111, TestValue1 = 222 });
+            hashMap.AddOrSet(1001, new Large { TestValue0 = 333, TestValue1 = 444 });
+
+            Assert.IsTrue(hashMap.TryGetValue(0, out int first));
+            Assert.AreEqual(0, first);
+
+            Assert.IsTrue(hashMap.TryGetValue(127, out int last));
+            Assert.AreEqual(127, last);
+
+            Assert.IsTrue(hashMap.TryGetValue(1000, out Large large0));
+            Assert.AreEqual((ulong)111, large0.TestValue0);
+            Assert.AreEqual((ulong)222, large0.TestValue1);
+
+            Assert.IsTrue(hashMap.TryGetValue(1001, out Large large1));
+            Assert.AreEqual((ulong)333, large1.TestValue0);
+            Assert.AreEqual((ulong)444, large1.TestValue1);
+        }
+
+#if ENABLE_UNITY_COLLECTIONS_CHECKS || UNITY_DOTS_DEBUG
+        [Test]
+        public void GetOrAddRef_WhenTypeDoesNotMatch_Throws()
+        {
+            var entity = this.Manager.CreateEntity(typeof(TestBuffer));
+            var buffer = this.Manager.GetBuffer<TestBuffer>(entity);
+
+            var hashMap = buffer.InitializeUntypedHashMap<TestBuffer, int>().AsUntypedHashMap<TestBuffer, int>();
+
+            hashMap.AddOrSet(0, 1);
+
+            Assert.Throws<InvalidOperationException>(() =>
+            {
+                hashMap.GetOrAddRef(0, (short)0);
+            });
+        }
+#endif
 
         [InternalBufferCapacity(0)]
         private struct TestBuffer : IDynamicUntypedHashMap<int>
