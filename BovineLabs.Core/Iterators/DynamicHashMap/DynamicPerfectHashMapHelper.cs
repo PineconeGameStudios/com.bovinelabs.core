@@ -155,21 +155,16 @@ namespace BovineLabs.Core.Iterators
         private static int CalculateDataSize(int count, out int outKeysOffset, out int outValuesOffset)
         {
             var headerSize = sizeof(DynamicPerfectHashMapHelper<TKey, TValue>);
-            var keysOffset = AlignUp(headerSize, UnsafeUtility.AlignOf<TKey>());
+            var keysOffset = CollectionHelper.Align(headerSize, UnsafeUtility.AlignOf<TKey>());
 
             var keysSize = sizeof(TKey) * count;
-            var valuesOffset = AlignUp(keysOffset + keysSize, UnsafeUtility.AlignOf<TValue>());
+            var valuesOffset = CollectionHelper.Align(keysOffset + keysSize, UnsafeUtility.AlignOf<TValue>());
             var valuesSize = sizeof(TValue) * count;
 
             outKeysOffset = keysOffset;
             outValuesOffset = valuesOffset;
 
             return valuesOffset + valuesSize;
-        }
-
-        private static int AlignUp(int offset, int alignment)
-        {
-            return (offset + alignment - 1) & ~(alignment - 1);
         }
 
         [Conditional("ENABLE_UNITY_COLLECTIONS_CHECKS")]
