@@ -449,20 +449,9 @@ namespace BovineLabs.Core.Iterators
 
             if (idx != -1)
             {
-                this.CheckType<TValue>(idx);
-
-                var value = this.Values + (idx * sizeof(int));
-
-                if (UnsafeUtility.SizeOf<TValue>() > sizeof(int))
+                fixed (DynamicUntypedHashMapHelper<TKey>* data = &this)
                 {
-                    idx = *value;
-
-                    // TODO range check
-                    item = *(TValue*)(this.Data + idx);
-                }
-                else
-                {
-                    item = *(TValue*)value;
+                    item = GetValue<TValue>(data, idx);
                 }
 
                 return true;
