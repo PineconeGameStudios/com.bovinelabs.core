@@ -122,7 +122,10 @@ namespace BovineLabs.Core.Utility
             }
 
             this.list = default;
+
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
             this.oldHandle = default;
+#endif
         }
     }
 
