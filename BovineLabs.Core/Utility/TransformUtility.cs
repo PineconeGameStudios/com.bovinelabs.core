@@ -89,8 +89,7 @@ namespace BovineLabs.Core.Utility
         /// Thrown if an entity (or one of its ancestors) is missing the required <see cref="LocalTransform"/> component, or is missing
         /// <see cref="LocalToWorld"/>.
         /// </exception>
-        public static void SetupLocalToWorld(
-            DynamicBuffer<LinkedEntityGroup> linkedEntityGroup, ref EntityManager entityManager)
+        public static void SetupLocalToWorld(DynamicBuffer<LinkedEntityGroup> linkedEntityGroup, in EntityManager entityManager)
         {
             var leg = linkedEntityGroup.AsNativeArray();
             var localToWorldCache = new NativeHashMap<Entity, float4x4>(leg.Length, Allocator.Temp);
@@ -105,11 +104,7 @@ namespace BovineLabs.Core.Utility
                     continue;
                 }
 
-                var worldMatrix = ComputeWorldTransformMatrixCached(
-                    entity,
-                    ref entityManager,
-                    ref localToWorldCache,
-                    ref scratch);
+                var worldMatrix = ComputeWorldTransformMatrixCached(entity, entityManager, ref localToWorldCache, ref scratch);
 
                 entityManager.SetComponentData(entity, new LocalToWorld { Value = worldMatrix });
             }
@@ -180,9 +175,8 @@ namespace BovineLabs.Core.Utility
             return worldMatrix;
         }
 
-        private static float4x4 ComputeWorldTransformMatrixCached(
-            Entity entity, ref EntityManager entityManager, ref NativeHashMap<Entity, float4x4> localToWorldCache,
-            ref NativeList<Entity> scratch)
+        private static float4x4 ComputeWorldTransformMatrixCached(Entity entity, in EntityManager entityManager,
+            ref NativeHashMap<Entity, float4x4> localToWorldCache, ref NativeList<Entity> scratch)
         {
             if (localToWorldCache.TryGetValue(entity, out var cached))
             {
