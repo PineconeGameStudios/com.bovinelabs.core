@@ -79,6 +79,42 @@ namespace BovineLabs.Core.Utility
             }
         }
 
+        /// <summary>
+        /// Computes and sets <see cref="LocalToWorld"/> for all entities in a <see cref="LinkedEntityGroup"/> using the current
+        /// <see cref="LocalTransform"/>, <see cref="Parent"/>, and optional <see cref="PostTransformMatrix"/> values.
+        /// </summary>
+        /// <param name="linkedEntityGroup">The linked entity group to process.</param>
+        /// <param name="entityManager">The entity manager.</param>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown if an entity (or one of its ancestors) is missing the required <see cref="LocalTransform"/> component, or is missing
+        /// <see cref="LocalToWorld"/>.
+        /// </exception>
+        public static void SetupLocalToWorld(
+            DynamicBuffer<LinkedEntityGroup> linkedEntityGroup, ref EntityManager entityManager)
+        {
+            var leg = linkedEntityGroup.AsNativeArray();
+            var localToWorldCache = new NativeHashMap<Entity, float4x4>(leg.Length, Allocator.Temp);
+            using var scratchPool = PooledNativeList<Entity>.Make();
+            var scratch = scratchPool.List;
+
+            for (var i = 0; i < leg.Length; i++)
+            {
+                var entity = leg[i].Value;
+                if (!entityManager.HasComponent<LocalToWorld>(entity))
+                {
+                    continue;
+                }
+
+                var worldMatrix = ComputeWorldTransformMatrixCached(
+                    entity,
+                    ref entityManager,
+                    ref localToWorldCache,
+                    ref scratch);
+
+                entityManager.SetComponentData(entity, new LocalToWorld { Value = worldMatrix });
+            }
+        }
+
         private static float4x4 ComputeWorldTransformMatrixCached(
             Entity entity, ref ComponentLookup<LocalTransform> localTransformLookup, ref ComponentLookup<Parent> parentLookup,
             ref ComponentLookup<PostTransformMatrix> postTransformMatrixLookup, ref NativeHashMap<Entity, float4x4> localToWorldCache,
@@ -135,6 +171,76 @@ namespace BovineLabs.Core.Utility
 
                 if (postTransformMatrixLookup.TryGetComponent(current, out var postTransformMatrix))
                 {
+                    worldMatrix = math.mul(worldMatrix, postTransformMatrix.Value);
+                }
+
+                CacheAdd(ref localToWorldCache, current, worldMatrix);
+            }
+
+            return worldMatrix;
+        }
+
+        private static float4x4 ComputeWorldTransformMatrixCached(
+            Entity entity, ref EntityManager entityManager, ref NativeHashMap<Entity, float4x4> localToWorldCache,
+            ref NativeList<Entity> scratch)
+        {
+            if (localToWorldCache.TryGetValue(entity, out var cached))
+            {
+                return cached;
+            }
+
+            scratch.Clear();
+
+            const int maxDepth = 1024;
+            var depth = 0;
+
+            var current = entity;
+            float4x4 baseMatrix;
+
+            while (true)
+            {
+                if (localToWorldCache.TryGetValue(current, out baseMatrix))
+                {
+                    break;
+                }
+
+                scratch.Add(current);
+
+                if (!entityManager.HasComponent<Parent>(current))
+                {
+                    baseMatrix = float4x4.identity;
+                    break;
+                }
+
+                var parent = entityManager.GetComponentData<Parent>(current);
+
+                current = parent.Value;
+
+                depth++;
+                if (depth > maxDepth)
+                {
+                    throw new InvalidOperationException("Parent hierarchy exceeded max depth; hierarchy may contain a cycle.");
+                }
+            }
+
+            var worldMatrix = baseMatrix;
+            for (var i = scratch.Length - 1; i >= 0; i--)
+            {
+                current = scratch[i];
+
+                if (!entityManager.HasComponent<LocalTransform>(current))
+                {
+                    throw new InvalidOperationException($"Entity {current} does not have the required LocalTransform component");
+                }
+
+                var localTransform = entityManager.GetComponentData<LocalTransform>(current);
+
+                worldMatrix = math.mul(worldMatrix, localTransform.ToMatrix());
+
+                if (entityManager.HasComponent<PostTransformMatrix>(current))
+                {
+                    var postTransformMatrix = entityManager.GetComponentData<PostTransformMatrix>(current);
+
                     worldMatrix = math.mul(worldMatrix, postTransformMatrix.Value);
                 }
 
