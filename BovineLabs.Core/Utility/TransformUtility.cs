@@ -89,7 +89,7 @@ namespace BovineLabs.Core.Utility
         /// Thrown if an entity (or one of its ancestors) is missing the required <see cref="LocalTransform"/> component, or is missing
         /// <see cref="LocalToWorld"/>.
         /// </exception>
-        public static void SetupLocalToWorld(DynamicBuffer<LinkedEntityGroup> linkedEntityGroup, in EntityManager entityManager)
+        public static void SetupLocalToWorld(DynamicBuffer<LinkedEntityGroup> linkedEntityGroup, ref SystemState state)
         {
             var leg = linkedEntityGroup.AsNativeArray();
             var localToWorldCache = new NativeHashMap<Entity, float4x4>(leg.Length, Allocator.Temp);
@@ -99,14 +99,14 @@ namespace BovineLabs.Core.Utility
             for (var i = 0; i < leg.Length; i++)
             {
                 var entity = leg[i].Value;
-                if (!entityManager.HasComponent<LocalToWorld>(entity))
+                if (!state.EntityManager.HasComponent<LocalToWorld>(entity))
                 {
                     continue;
                 }
 
-                var worldMatrix = ComputeWorldTransformMatrixCached(entity, entityManager, ref localToWorldCache, ref scratch);
+                var worldMatrix = ComputeWorldTransformMatrixCached(entity, ref state, ref localToWorldCache, ref scratch);
 
-                entityManager.SetComponentData(entity, new LocalToWorld { Value = worldMatrix });
+                state.EntityManager.SetComponentData(entity, new LocalToWorld { Value = worldMatrix });
             }
         }
 
@@ -175,7 +175,7 @@ namespace BovineLabs.Core.Utility
             return worldMatrix;
         }
 
-        private static float4x4 ComputeWorldTransformMatrixCached(Entity entity, in EntityManager entityManager,
+        private static float4x4 ComputeWorldTransformMatrixCached(Entity entity, ref SystemState state,
             ref NativeHashMap<Entity, float4x4> localToWorldCache, ref NativeList<Entity> scratch)
         {
             if (localToWorldCache.TryGetValue(entity, out var cached))
@@ -200,13 +200,13 @@ namespace BovineLabs.Core.Utility
 
                 scratch.Add(current);
 
-                if (!entityManager.HasComponent<Parent>(current))
+                if (!state.EntityManager.HasComponent<Parent>(current))
                 {
                     baseMatrix = float4x4.identity;
                     break;
                 }
 
-                var parent = entityManager.GetComponentData<Parent>(current);
+                var parent = state.EntityManager.GetComponentData<Parent>(current);
 
                 current = parent.Value;
 
@@ -222,18 +222,18 @@ namespace BovineLabs.Core.Utility
             {
                 current = scratch[i];
 
-                if (!entityManager.HasComponent<LocalTransform>(current))
+                if (!state.EntityManager.HasComponent<LocalTransform>(current))
                 {
                     throw new InvalidOperationException($"Entity {current} does not have the required LocalTransform component");
                 }
 
-                var localTransform = entityManager.GetComponentData<LocalTransform>(current);
+                var localTransform = state.EntityManager.GetComponentData<LocalTransform>(current);
 
                 worldMatrix = math.mul(worldMatrix, localTransform.ToMatrix());
 
-                if (entityManager.HasComponent<PostTransformMatrix>(current))
+                if (state.EntityManager.HasComponent<PostTransformMatrix>(current))
                 {
-                    var postTransformMatrix = entityManager.GetComponentData<PostTransformMatrix>(current);
+                    var postTransformMatrix = state.EntityManager.GetComponentData<PostTransformMatrix>(current);
 
                     worldMatrix = math.mul(worldMatrix, postTransformMatrix.Value);
                 }
