@@ -84,7 +84,7 @@ namespace BovineLabs.Core.Utility
         /// <see cref="LocalTransform"/>, <see cref="Parent"/>, and optional <see cref="PostTransformMatrix"/> values.
         /// </summary>
         /// <param name="linkedEntityGroup">The linked entity group to process.</param>
-        /// <param name="entityManager">The entity manager.</param>
+        /// <param name="state">The system state.</param>
         /// <exception cref="InvalidOperationException">
         /// Thrown if an entity (or one of its ancestors) is missing the required <see cref="LocalTransform"/> component, or is missing
         /// <see cref="LocalToWorld"/>.
