@@ -6,11 +6,11 @@ namespace BovineLabs.Core
 {
     using BovineLabs.Core.Extensions;
     using Unity.Entities;
-    using Unity.NetCode;
 
     public static class Worlds
     {
         public const WorldSystemFilterFlags Service = (WorldSystemFilterFlags)(1 << 21);
+        public const WorldSystemFilterFlags Menu = (WorldSystemFilterFlags)(1 << 22);
 
         public const WorldSystemFilterFlags ClientLocal = WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.LocalSimulation;
 
@@ -23,11 +23,14 @@ namespace BovineLabs.Core
 
         public const WorldSystemFilterFlags SimulationService = Simulation | Service;
 
+        public const WorldSystemFilterFlags SimulationMenu = Simulation | Menu;
+
         public const WorldSystemFilterFlags SimulationEditor = Simulation | WorldSystemFilterFlags.Editor;
 
-        public const WorldSystemFilterFlags All = SimulationEditor | Service;
+        public const WorldSystemFilterFlags All = SimulationEditor | Service | Menu;
 
         public const WorldFlags ServiceWorld = (WorldFlags)(1 << 16) | WorldFlags.Live;
+        public const WorldFlags MenuWorld = (WorldFlags)(1 << 17) | WorldFlags.Live;
 
         /// <summary> Determines whether a world is a service world. </summary>
         /// <param name="world">The world instance to check.</param>

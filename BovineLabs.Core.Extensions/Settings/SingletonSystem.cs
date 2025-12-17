@@ -11,6 +11,27 @@ namespace BovineLabs.Core.Settings
     using Unity.Collections;
     using Unity.Entities;
 
+    /// <summary>
+    /// Creates and maintains runtime singleton buffers for any <see cref="IBufferElementData" /> type marked with
+    /// <see cref="SingletonAttribute" /> by merging (appending) all instances of that buffer found in the world into a single
+    /// internal singleton entity.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This exists to support patterns where multiple sources (settings authoring, multiple subscenes, mods, etc.) can contribute
+    /// values to a buffer, while runtime systems want to read it via a single-entity singleton buffer API.
+    /// </para>
+    /// <para>
+    /// For each marked buffer type, this system creates an entity that contains:
+    /// <list type="bullet">
+    /// <item><description>the buffer itself</description></item>
+    /// <item><description><see cref="Singleton" /> tag</description></item>
+    /// <item><description><see cref="SingletonInitialize" /> (enableable one-frame signal)</description></item>
+    /// </list>
+    /// It then copies elements from all non-singleton entities that have the buffer into the singleton buffer, enables
+    /// <see cref="SingletonInitialize" />, and finally removes the buffer component from those source entities.
+    /// </para>
+    /// </remarks>
     [UpdateInGroup(typeof(AfterSceneSystemGroup), OrderFirst = true)]
     public unsafe partial struct SingletonSystem : ISystem
     {
@@ -94,6 +115,9 @@ namespace BovineLabs.Core.Settings
             public DynamicComponentTypeHandle TypeHandle;
         }
 
+        /// <summary>
+        /// Cached list of all buffer component types in the domain that are marked with <see cref="SingletonAttribute" />.
+        /// </summary>
         private static class AllSingletonTypes
         {
             public static readonly List<ComponentType> Components = new();

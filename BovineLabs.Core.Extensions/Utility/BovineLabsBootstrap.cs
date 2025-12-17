@@ -29,6 +29,7 @@ namespace BovineLabs.Core
         private static readonly SharedStatic<int> FixedUpdate = SharedStatic<int>.GetOrCreate<FixedUpdateKey>();
 
         private World serviceWorld;
+        private World menuWorld;
 
 #if !UNITY_NETCODE && !UNITY_SERVER
         private World gameWorld;
@@ -106,6 +107,71 @@ namespace BovineLabs.Core
             this.gameWorld.Dispose();
             this.gameWorld = null;
 #endif
+#endif
+        }
+
+        /// <summary> Creates a simple menu world as long as we aren't a dedicated server. </summary>
+        /// <exception cref="InvalidOperationException"> If there is already a menu world. </exception>
+        public void CreateMenuWorld()
+        {
+#if !UNITY_SERVER
+            if (this.menuWorld != null)
+            {
+                throw new InvalidOperationException("MenuWorld has not been correctly cleaned up");
+            }
+
+            this.menuWorld = new World("MenuWorld", Worlds.MenuWorld);
+
+            World.DefaultGameObjectInjectionWorld = this.menuWorld;
+
+            var systems = DefaultWorldInitialization.GetAllSystemTypeIndices(Worlds.Menu);
+            systems.Add(TypeManager.GetSystemTypeIndex<BLDebugSystem>());
+
+            // Add all unity systems
+            var allSystems = DefaultWorldInitialization.GetAllSystems(WorldSystemFilterFlags.Default);
+            foreach (var system in allSystems)
+            {
+                if (system.Namespace == null)
+                {
+                    continue;
+                }
+
+                if (!system.Namespace.StartsWith("Unity."))
+                {
+                    continue;
+                }
+
+#if UNITY_NETCODE
+                // But exclude netcode as that's not required in menu
+                if (system.Namespace.StartsWith("Unity.NetCode"))
+                {
+                    continue;
+                }
+#endif
+
+                systems.Add(TypeManager.GetSystemTypeIndex(system));
+            }
+
+            DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups(this.menuWorld, systems);
+            ScriptBehaviourUpdateOrder.AppendWorldToCurrentPlayerLoop(this.menuWorld);
+
+            InitializeWorld(this.menuWorld);
+#endif
+        }
+
+        /// <summary> Destroys the game world. </summary>
+        public void DestroyMenuWorld()
+        {
+#if !UNITY_SERVER
+            if (this.menuWorld is not { IsCreated: true })
+            {
+                return;
+            }
+
+            World.DefaultGameObjectInjectionWorld = ServiceWorld;
+
+            this.menuWorld.Dispose();
+            this.menuWorld = null;
 #endif
         }
 

@@ -12,7 +12,7 @@ namespace BovineLabs.Core
     /// <summary>
     /// Command buffer system for handling entity instantiation operations for the initialization lifecycle phase.
     /// </summary>
-    [WorldSystemFilter(WorldSystemFilterFlags.Default | Worlds.Service)]
+    [WorldSystemFilter(Worlds.All)]
     [UpdateInGroup(typeof(BeforeSceneSystemGroup))]
     public partial class InstantiateCommandBufferSystem : EntityCommandBufferSystem
     {

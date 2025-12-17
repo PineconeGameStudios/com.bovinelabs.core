@@ -9,6 +9,7 @@ namespace BovineLabs.Core.LifeCycle
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Entities;
 
+    [WorldSystemFilter(Worlds.SimulationMenu)]
     [UpdateInGroup(typeof(InitializeSystemGroup), OrderLast = true)]
     public partial class EndInitializeEntityCommandBufferSystem : EntityCommandBufferSystem
     {

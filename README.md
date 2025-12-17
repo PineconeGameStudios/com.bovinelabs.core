@@ -28,6 +28,7 @@ Once installed, the library provides utilities, custom containers, and high-perf
 | [Jobs](Documentation~/Jobs.md)                                   | Custom jobs (IJobForThread, IJobParallelForDeferBatch, IJobHashMapDefer, IJobParallelHashMapDefer)                                    |
 | [K](Documentation~/K.md)                                         | K is a type-safe, Burst-compatible alternative to Enums and LayerMasks that allows you to define key-value pairs in settings files    |
 | [Settings](Documentation~/Settings.md)                           | Settings framework for managing and creating settings                                                                                 | 
+| [Singleton Buffers](Documentation~/SingletonBuffers.md)         | Merge dynamic buffers from many sources into a single runtime singleton buffer entity                                                |
 | [Singleton Collection](Documentation~/SingletonCollection.md)    | Easily set up a Many-To-One container singleton with minimal boilerplate and syncless job support                                     | 
 | [Spatial](Documentation~/Spatial.md)                             | Fast spatial hashmap generation                                                                                                       |
 | [States](Documentation~/States.md)                               | Provides states on entities by mapping a bit field to components automatically                                                        |

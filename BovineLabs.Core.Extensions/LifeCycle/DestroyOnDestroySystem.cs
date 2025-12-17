@@ -10,10 +10,11 @@ namespace BovineLabs.Core.LifeCycle
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Entities;
 
-    /// <summary> 
-    /// Propagates destruction through LinkedEntityGroup hierarchies. When an entity with DestroyEntity enabled has a LinkedEntityGroup, 
+    /// <summary>
+    /// Propagates destruction through LinkedEntityGroup hierarchies. When an entity with DestroyEntity enabled has a LinkedEntityGroup,
     /// this system recursively marks all child entities for destruction.
     /// </summary>
+    [WorldSystemFilter(Worlds.SimulationMenu)]
     [UpdateInGroup(typeof(DestroySystemGroup), OrderFirst = true)]
     public partial struct DestroyOnDestroySystem : ISystem
     {

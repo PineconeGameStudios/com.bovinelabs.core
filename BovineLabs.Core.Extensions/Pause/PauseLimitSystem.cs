@@ -13,7 +13,7 @@ namespace BovineLabs.Core.Pause
 
     [UpdateAfter(typeof(EndInitializationEntityCommandBufferSystem))]
     [UpdateInGroup(typeof(InitializationSystemGroup), OrderLast = true)]
-    [WorldSystemFilter(Worlds.Service | Worlds.Simulation)]
+    [WorldSystemFilter(Worlds.SimulationService | Worlds.Menu)]
     public partial class PauseLimitSystem : SystemBase
     {
 #if UNITY_NETCODE

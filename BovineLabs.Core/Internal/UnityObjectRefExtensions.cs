@@ -4,6 +4,7 @@
 
 namespace BovineLabs.Core.Internal
 {
+    using Unity.Collections.LowLevel.Unsafe;
     using Unity.Entities;
     using UnityEngine;
 
@@ -19,6 +20,12 @@ namespace BovineLabs.Core.Internal
             where T : Object
         {
             unityObjectRef.Id.instanceId = instanceId;
+        }
+
+        public static void SetInstanceId<T>(this ref UnityObjectRef<T> unityObjectRef, EntityId entityId)
+            where T : Object
+        {
+            unityObjectRef.Id.instanceId = UnsafeUtility.As<EntityId, int>(ref entityId);
         }
     }
 }

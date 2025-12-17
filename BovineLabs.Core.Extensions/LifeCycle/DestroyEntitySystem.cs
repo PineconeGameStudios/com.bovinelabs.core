@@ -12,10 +12,11 @@ namespace BovineLabs.Core.LifeCycle
     using Unity.NetCode;
 #endif
 
-    /// <summary> 
-    /// Core system that destroys entities marked with the DestroyEntity component. 
+    /// <summary>
+    /// Core system that destroys entities marked with the DestroyEntity component.
     /// Handles both regular entities and those with LinkedEntityGroup. On client with NetCode, ghosts are excluded from destruction.
     /// </summary>
+    [WorldSystemFilter(Worlds.SimulationMenu)]
     [UpdateAfter(typeof(DestroyEntityCommandBufferSystem))]
     [UpdateInGroup(typeof(DestroySystemGroup), OrderLast = true)]
     public partial struct DestroyEntitySystem : ISystem

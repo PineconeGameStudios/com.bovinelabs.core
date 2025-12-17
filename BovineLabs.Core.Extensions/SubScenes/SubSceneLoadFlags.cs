@@ -17,6 +17,7 @@ namespace BovineLabs.Core.SubScenes
         Server = 1 << 3,
         ThinClient = 1 << 4,
 #endif
+        Menu = 1 << 5,
     }
 }
 #endif

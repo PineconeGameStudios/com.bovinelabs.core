@@ -25,6 +25,7 @@ namespace BovineLabs.Core.Authoring.Camera
                     this.AddComponent<CameraMain>(entity);
                 }
 
+                this.AddComponent<CameraComponent>(entity);
                 this.AddComponent<CameraFrustumPlanes>(entity);
                 this.AddComponent<CameraFrustumCorners>(entity);
             }

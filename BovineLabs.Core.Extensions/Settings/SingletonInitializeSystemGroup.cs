@@ -10,11 +10,16 @@ namespace BovineLabs.Core.Settings
     using Unity.Entities;
 
 #if !BL_DISABLE_LIFECYCLE
+    [WorldSystemFilter(Worlds.SimulationEditor)]
     [UpdateBefore(typeof(LifeCycle.InitializeSystemGroup))]
 #endif
     [UpdateInGroup(typeof(BeginSimulationSystemGroup), OrderFirst = true)]
     public partial class SingletonInitializeSystemGroup : ComponentSystemGroup, IUpdateWhilePaused
     {
+        /// <summary>
+        /// Updates only when there is at least one enabled <see cref="SingletonInitialize" /> component, allowing dependent systems
+        /// to run only when singleton buffers have been merged/changed.
+        /// </summary>
         /// <inheritdoc />
         protected override void OnUpdate()
         {

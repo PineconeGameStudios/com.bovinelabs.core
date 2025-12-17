@@ -39,6 +39,10 @@ namespace BovineLabs.Core.SubScenes
                 flags |= WorldFlags.GameThinClient;
             }
 #endif
+            if ((targetWorld & SubSceneLoadFlags.Menu) != 0)
+            {
+                flags |= Worlds.MenuWorld;
+            }
 
             // Remove the live flag
             flags &= ~WorldFlags.Live;

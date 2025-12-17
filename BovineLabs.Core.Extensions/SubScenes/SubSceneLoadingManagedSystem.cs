@@ -15,7 +15,7 @@ namespace BovineLabs.Core.SubScenes
     using Hash128 = Unity.Entities.Hash128;
 
     [UpdateInGroup(typeof(AfterSceneSystemGroup), OrderFirst = true)]
-    [WorldSystemFilter(Worlds.SimulationService)]
+    [WorldSystemFilter(Worlds.SimulationService | Worlds.Menu)]
     [UpdateBefore(typeof(SubSceneLoadingSystem))]
     public partial class SubSceneLoadingManagedSystem : SystemBase
     {

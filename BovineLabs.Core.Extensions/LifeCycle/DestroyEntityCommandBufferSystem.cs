@@ -10,6 +10,7 @@ namespace BovineLabs.Core.LifeCycle
     using Unity.Entities;
 
     /// <summary> Entity Command Buffer System for the destruction phase. Executes after all destroy systems to ensure proper cleanup order. </summary>
+    [WorldSystemFilter(Worlds.SimulationMenu)]
     [UpdateInGroup(typeof(DestroySystemGroup), OrderLast = true)]
     public partial class DestroyEntityCommandBufferSystem : EntityCommandBufferSystem
     {

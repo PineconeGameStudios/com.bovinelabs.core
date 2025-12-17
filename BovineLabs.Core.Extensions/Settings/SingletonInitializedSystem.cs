@@ -8,6 +8,10 @@ namespace BovineLabs.Core.Settings
     using Unity.Burst.Intrinsics;
     using Unity.Entities;
 
+    /// <summary>
+    /// Clears the one-frame <see cref="SingletonInitialize" /> signal after all systems in <see cref="SingletonInitializeSystemGroup" />
+    /// have updated.
+    /// </summary>
     [UpdateInGroup(typeof(SingletonInitializeSystemGroup), OrderLast = true)]
     public partial struct SingletonInitializedSystem : ISystem
     {
@@ -28,6 +32,7 @@ namespace BovineLabs.Core.Settings
         {
             public ComponentTypeHandle<SingletonInitialize> SingletonHandle;
 
+            /// <inheritdoc />
             public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
             {
                 chunk.SetComponentEnabledForAll(ref this.SingletonHandle, false);

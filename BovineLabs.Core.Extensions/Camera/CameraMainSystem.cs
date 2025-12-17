@@ -16,25 +16,21 @@ namespace BovineLabs.Core.Camera
         /// <inheritdoc />
         protected override void OnUpdate()
         {
-            var cameraQuery = SystemAPI.QueryBuilder().WithAllRW<LocalTransform>().WithAll<CameraMain, Camera>().Build();
-
-            Entity entity;
+            var cameraQuery = SystemAPI.QueryBuilder().WithAllRW<LocalTransform, CameraComponent>().WithAll<CameraMain>().Build();
 
             if (cameraQuery.IsEmptyIgnoreFilter)
             {
-                var noCameraQuery = SystemAPI.QueryBuilder().WithAllRW<LocalTransform>().WithAll<CameraMain>().WithNone<Camera>().Build();
+                // User hasn't setup an entity, create our own
+                this.EntityManager.CreateEntity(typeof(CameraMain), typeof(LocalTransform), typeof(CameraFrustumPlanes), typeof(CameraFrustumCorners),
+                    typeof(CameraComponent));
+            }
 
-                if (noCameraQuery.IsEmptyIgnoreFilter)
-                {
-                    // User hasn't setup an entity, create our own
-                    entity = this.EntityManager.CreateEntity(typeof(CameraMain), typeof(LocalTransform), typeof(CameraFrustumPlanes),
-                        typeof(CameraFrustumCorners), typeof(Camera));
-                }
-                else
-                {
-                    entity = noCameraQuery.GetSingletonEntity();
-                }
+            cameraQuery.CompleteDependency();
 
+            ref var cameraComponent = ref cameraQuery.GetSingletonRW<CameraComponent>().ValueRW;
+
+            if (!cameraComponent.Value.IsValid())
+            {
                 var cam = Camera.main;
                 if (cam == null)
                 {
@@ -42,16 +38,11 @@ namespace BovineLabs.Core.Camera
                     return;
                 }
 
-                this.EntityManager.AddComponentObject(entity, cam);
-            }
-            else
-            {
-                entity = cameraQuery.GetSingletonEntity();
+                cameraComponent.Value = cam;
             }
 
-            var camera = cameraQuery.GetSingleton<Camera>();
-            var tr = camera.transform;
-            this.EntityManager.SetComponentData(entity, LocalTransform.FromPositionRotation(tr.position, tr.rotation));
+            var tr = cameraComponent.Value.Value.transform;
+            cameraQuery.GetSingletonRW<LocalTransform>().ValueRW = LocalTransform.FromPositionRotation(tr.position, tr.rotation);
         }
     }
 }

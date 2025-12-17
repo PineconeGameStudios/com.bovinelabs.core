@@ -11,7 +11,7 @@ namespace BovineLabs.Core.SubScenes
     using UnityEngine;
 
     [UpdateInGroup(typeof(AfterSceneSystemGroup), OrderFirst = true)]
-    [WorldSystemFilter(WorldSystemFilterFlags.Default | WorldSystemFilterFlags.ThinClientSimulation | Worlds.Service)]
+    [WorldSystemFilter(Worlds.SimulationService | Worlds.Menu)]
     public partial class AssetLoadingSystem : SystemBase
     {
         private readonly Dictionary<GameObject, GameObject> objects = new();
