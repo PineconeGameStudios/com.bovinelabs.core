@@ -1244,7 +1244,12 @@ namespace BovineLabs.FacetGenerator
         {
             get
             {
-                if (this.IsSingleton || this.IsFacet)
+                if (this.IsSingleton)
+                {
+                    return this.PascalFieldName;
+                }
+
+                if (this.IsFacet)
                 {
                     return $"{this.PascalFieldName}Handle";
                 }
