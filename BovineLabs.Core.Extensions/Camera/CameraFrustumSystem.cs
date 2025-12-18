@@ -18,10 +18,10 @@ namespace BovineLabs.Core.Camera
         /// <inheritdoc />
         protected override void OnUpdate()
         {
-            foreach (var (frustumPlanes, frustumCorners, cameraWrapper) in SystemAPI
-                .Query<RefRW<CameraFrustumPlanes>, RefRW<CameraFrustumCorners>, SystemAPI.ManagedAPI.UnityEngineComponent<Camera>>())
+            foreach (var (frustumPlanes, frustumCorners, cameraComponent) in SystemAPI
+                .Query<RefRW<CameraFrustumPlanes>, RefRW<CameraFrustumCorners>, RefRO<CameraComponent>>())
             {
-                var camera = cameraWrapper.Value;
+                var camera = cameraComponent.ValueRO.Value.Value;
 
                 if (camera == null)
                 {
