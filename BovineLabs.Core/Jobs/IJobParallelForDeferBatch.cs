@@ -74,16 +74,22 @@ namespace BovineLabs.Core.Jobs
             where T : unmanaged, IJobParallelForDeferBatch
             where U : unmanaged
         {
-            void* atomicSafetyHandlePtr = null;
             // Calculate the deferred atomic safety handle before constructing JobScheduleParameters so
             // DOTS Runtime can validate the deferred list statically similar to the reflection based
             // validation in Big Unity.
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             var safety = NativeListUnsafeUtility.GetAtomicSafetyHandle(ref list);
-            atomicSafetyHandlePtr = UnsafeUtility.AddressOf(ref safety);
+            void* atomicSafetyHandlePtr = UnsafeUtility.AddressOf(ref safety);
+#else
+            void* atomicSafetyHandlePtr = null
 #endif
+
+#if UNITY_6000_5_OR_NEWER
+            return ScheduleParallelBatchInternal(ref jobData, innerloopBatchCount, list.GetUnsafeList(), atomicSafetyHandlePtr, dependsOn);
+#else
             return ScheduleParallelBatchInternal(ref jobData, innerloopBatchCount, NativeListUnsafeUtility.GetInternalListDataPtrUnchecked(ref list),
                 atomicSafetyHandlePtr, dependsOn);
+#endif
         }
 
         /// <summary>
@@ -148,13 +154,14 @@ namespace BovineLabs.Core.Jobs
             where T : unmanaged, IJobParallelForDeferBatch
             where U : unmanaged
         {
-            void* atomicSafetyHandlePtr = null;
             // Calculate the deferred atomic safety handle before constructing JobScheduleParameters so
             // DOTS Runtime can validate the deferred list statically similar to the reflection based
             // validation in Big Unity.
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             var safety = NativeListUnsafeUtility.GetAtomicSafetyHandle(ref list);
-            atomicSafetyHandlePtr = UnsafeUtility.AddressOf(ref safety);
+            void* atomicSafetyHandlePtr = UnsafeUtility.AddressOf(ref safety);
+#else
+            void* atomicSafetyHandlePtr = null;
 #endif
             return ScheduleParallelBatchInternal(ref jobData, innerloopBatchCount, NativeListUnsafeUtility.GetInternalListDataPtrUnchecked(ref list),
                 atomicSafetyHandlePtr, dependsOn);
