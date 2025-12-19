@@ -38,7 +38,7 @@ namespace BovineLabs.Core.Editor.Utility
             switch (obj)
             {
                 case PlayModeStateChange.EnteredPlayMode:
-                case PlayModeStateChange.ExitingPlayMode:
+                case PlayModeStateChange.EnteredEditMode:
                     RefreshReload();
                     break;
             }
