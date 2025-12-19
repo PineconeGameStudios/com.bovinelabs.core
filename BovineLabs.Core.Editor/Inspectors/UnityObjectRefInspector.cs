@@ -2,6 +2,8 @@
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
+#pragma warning disable SA1402
+
 namespace BovineLabs.Core.Editor.Inspectors
 {
     using BovineLabs.Core.Editor.Internal;
@@ -95,4 +97,11 @@ namespace BovineLabs.Core.Editor.Inspectors
     internal class InputActionReferenceUnityObjectRefInspector : UnityObjectRefInspector<UnityEngine.InputSystem.InputActionReference>
     {
     }
+
+#if UNITY_SPLINES
+    [UsedImplicitly]
+    internal class SplineContainerUnityObjectRefInspector : UnityObjectRefInspector<UnityEngine.Splines.SplineContainer>
+    {
+    }
+#endif
 }

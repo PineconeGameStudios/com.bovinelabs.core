@@ -16,6 +16,7 @@
     "Unity.Mathematics",
     "Unity.Scenes",
     "Unity.Scenes.Editor",
+    "Unity.Splines",
     "Unity.Physics",
     "Unity.Serialization.Editor",
     "Unity.Transforms",
@@ -65,6 +66,11 @@
       "name": "com.unity.visualeffectgraph",
       "expression": "",
       "define": "UNITY_VFX_GRAPH"
+    },
+    {
+      "name": "com.unity.splines",
+      "expression": "",
+      "define": "UNITY_SPLINES"
     }
   ],
   "noEngineReferences": false
