@@ -270,14 +270,16 @@ namespace BovineLabs.Core
                 return false;
             }
 
-            return t != typeof(FixedStepSimulationSystemGroup) && t != typeof(BeginFixedStepSimulationEntityCommandBufferSystem) &&
-                t != typeof(EndFixedStepSimulationEntityCommandBufferSystem) && t != typeof(VariableRateSimulationSystemGroup) &&
-                t != typeof(BeginVariableRateSimulationEntityCommandBufferSystem) && t != typeof(EndVariableRateSimulationEntityCommandBufferSystem) &&
-                t != typeof(CompanionGameObjectUpdateTransformSystem) &&
+            return
+#if !UNITY_DISABLE_MANAGED_COMPONENTS
+                t != typeof(CompanionGameObjectUpdateTransformSystem) && t != EntityInternals.CompanionGameObjectUpdateSystemType &&
+#endif
 #if !BL_DISABLE_TIME
                 t != typeof(UpdateWorldTimeSystem) &&
 #endif
-                t != EntityInternals.CompanionGameObjectUpdateSystemType;
+                t != typeof(FixedStepSimulationSystemGroup) && t != typeof(BeginFixedStepSimulationEntityCommandBufferSystem) &&
+                t != typeof(EndFixedStepSimulationEntityCommandBufferSystem) && t != typeof(VariableRateSimulationSystemGroup) &&
+                t != typeof(BeginVariableRateSimulationEntityCommandBufferSystem) && t != typeof(EndVariableRateSimulationEntityCommandBufferSystem);
 
             // TODO do we need transform, companion, fixed/variable update etc
         }

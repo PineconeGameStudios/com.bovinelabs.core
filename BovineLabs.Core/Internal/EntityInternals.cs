@@ -2,6 +2,7 @@
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
+#if !UNITY_DISABLE_MANAGED_COMPONENTS
 namespace BovineLabs.Core.Internal
 {
     using System;
@@ -12,3 +13,4 @@ namespace BovineLabs.Core.Internal
         public static Type CompanionGameObjectUpdateSystemType => typeof(CompanionGameObjectUpdateSystem);
     }
 }
+#endif
