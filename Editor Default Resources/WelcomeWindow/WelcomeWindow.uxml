@@ -12,7 +12,7 @@
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:VisualElement class="bl-hero__meta">
-                <ui:Label text="v1.5.1" class="bl-pill bl-pill--accent"/>
+                <ui:Label text="v1.6.0" class="bl-pill bl-pill--accent"/>
                 <ui:Label text="Unity 6.3+" class="bl-pill"/>
             </ui:VisualElement>
         </ui:VisualElement>
@@ -101,8 +101,6 @@
                         <ui:Button text="Extensions Disabled" name="EnableExtensions" class="bl-button bl-button--block bl-button--ghost"/>
                         <ui:VisualElement class="bl-feature-list">
                             <BovineLabs.Core.Editor.Welcome.FeatureToggle text="Analyzers" name="Analyzers" define="BL_DISABLE_ANALYZERS" value="false" description="Automatic Roslyn analyzer integration for consistent DOTS code quality." class="bl-feature"/>
-                            <BovineLabs.Core.Editor.Welcome.FeatureToggle text="Camera" name="Camera" define="BL_DISABLE_CAMERA" value="false" description="ECS camera integration with frustum culling and Unity Camera sync." class="bl-feature"/>
-                            <BovineLabs.Core.Editor.Welcome.FeatureToggle text="Input" name="Input" define="BL_DISABLE_INPUT" value="false" description="Entity-friendly input with generated components and shared input context." class="bl-feature"/>
                             <BovineLabs.Core.Editor.Welcome.FeatureToggle text="Life Cycle" name="LifeCycle" define="BL_DISABLE_LIFECYCLE" value="false" description="Lifecycle helpers for clean initialization and teardown of entities." class="bl-feature"/>
                             <BovineLabs.Core.Editor.Welcome.FeatureToggle text="Object Definitions" name="ObjectDefinitions" define="BL_DISABLE_OBJECT_DEFINITION" value="false" description="ID, category, and grouping pipeline with merge-safe authoring." class="bl-feature"/>
                             <BovineLabs.Core.Editor.Welcome.FeatureToggle text="Pause" name="Pause" define="BL_DISABLE_PAUSE" value="false" description="World-level pause with granular system opt-in/out while paused." class="bl-feature"/>
