@@ -113,7 +113,7 @@ namespace BovineLabs.Core.Editor.SubScenes
             }
         }
 
-        private static void SceneSelectionClicked<T>(T worldBound, bool baking)
+        private static void SceneSelectionClicked<T>(T dropDown, bool baking)
             where T : IDropDown
         {
             if (EditorApplication.isPlaying)
@@ -123,17 +123,17 @@ namespace BovineLabs.Core.Editor.SubScenes
                     return;
                 }
 
-                LivingBakingDropdown(worldBound);
+                LivingBakingDropdown(dropDown);
             }
             else
             {
                 if (baking)
                 {
-                    SceneSelectionDropDown(worldBound, (_, _, _) => true, AddSceneBake);
+                    SceneSelectionDropDown(dropDown, (_, _, _) => true, AddSceneBake);
                 }
                 else
                 {
-                    SceneSelectionDropDown(worldBound, AddSetOpen, AddSceneOpen);
+                    SceneSelectionDropDown(dropDown, AddSetOpen, AddSceneOpen);
                 }
             }
         }
