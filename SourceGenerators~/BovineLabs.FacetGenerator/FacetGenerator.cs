@@ -325,7 +325,7 @@ namespace BovineLabs.FacetGenerator
                     fieldSymbol.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct } facetType &&
                     facetType.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, facetInterface)))
                 {
-                    field = new FacetField(fieldSymbol, facetType, FacetFieldKind.Facet, isOptional, hasReadOnlyAttribute || fieldSymbol.IsReadOnly);
+                    field = new FacetField(fieldSymbol, facetType, FacetFieldKind.Facet, isOptional, hasReadOnlyAttribute);
                     return true;
                 }
 
