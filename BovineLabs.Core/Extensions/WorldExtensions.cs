@@ -76,7 +76,11 @@ namespace BovineLabs.Core.Extensions
         /// <returns>True if the world has the <see cref="WorldFlags.Editor" /> flag set.</returns>
         public static bool IsEditorWorld(this World world)
         {
+#if UNITY_EDITOR
             return (world.Flags & WorldFlags.Editor) == WorldFlags.Editor;
+#else
+            return false;
+#endif
         }
 
         /// <summary>Determines whether an unmanaged world is the editor world.</summary>

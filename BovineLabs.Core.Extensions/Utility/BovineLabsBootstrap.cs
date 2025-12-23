@@ -280,8 +280,6 @@ namespace BovineLabs.Core
                 t != typeof(FixedStepSimulationSystemGroup) && t != typeof(BeginFixedStepSimulationEntityCommandBufferSystem) &&
                 t != typeof(EndFixedStepSimulationEntityCommandBufferSystem) && t != typeof(VariableRateSimulationSystemGroup) &&
                 t != typeof(BeginVariableRateSimulationEntityCommandBufferSystem) && t != typeof(EndVariableRateSimulationEntityCommandBufferSystem);
-
-            // TODO do we need transform, companion, fixed/variable update etc
         }
 
         private struct FrameRateKey

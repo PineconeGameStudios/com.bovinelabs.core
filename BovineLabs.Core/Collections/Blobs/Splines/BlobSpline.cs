@@ -20,24 +20,22 @@ namespace BovineLabs.Core.Collections
 
         /// <summary> A BlobArray of <see cref="BezierKnot"/> that form this Spline. </summary>
         /// <value> Returns a reference to the knots array. </value>
-        [ReadOnly]
         public BlobArray<BezierKnot> Knots;
 
         /// <summary> A BlobArray of <see cref="BezierCurve"/> that form this Spline. </summary>
         /// <value> Returns a reference to the curves array. </value>
-        [ReadOnly]
         public BlobArray<BezierCurve> Curves;
 
-        // TODO we totally can in a blob
-        // As we cannot make a NativeArray of NativeArray all segments lookup tables are stored in a single array
-        // each lookup table as a length of k_SegmentResolution and starts at index i = curveIndex * k_SegmentResolution
-        [ReadOnly]
+        /// <summary>
+        /// Per-curve length lookup tables stored contiguously. Each curve's table has <see cref="SegmentResolution"/>
+        /// entries starting at <c>curveIndex * SegmentResolution</c>.
+        /// </summary>
         public BlobArray<DistanceToInterpolation> SegmentLengthsLookupTable;
 
-        // TODO we totally can in a blob
-        // As we cannot make a NativeArray of NativeArray all segments lookup tables are stored in a single array
-        // each lookup table as a length of k_SegmentResolution and starts at index i = curveIndex * k_SegmentResolution
-        [ReadOnly]
+        /// <summary>
+        /// Per-curve up vectors stored contiguously. Each curve's table has <see cref="SegmentResolution"/>
+        /// entries starting at <c>curveIndex * SegmentResolution</c>.
+        /// </summary>
         public BlobArray<float3> UpVectorsLookupTable;
 
         /// <summary> Whether the spline is open (has a start and end point) or closed (forms an unbroken loop). </summary>
@@ -95,9 +93,6 @@ namespace BovineLabs.Core.Collections
             // Costly to do this for temporary NativeSpline that does not require to access/compute up vectors
             var upVectorsLookupTable = builder.Allocate(ref blobSpline.UpVectorsLookupTable, knotCount * SegmentResolution);
 
-            // TODO we totally can for blobs
-            // As we cannot make a NativeArray of NativeArray all segments lookup tables are stored in a single array
-            // each lookup table as a length of k_SegmentResolution and starts at index i = curveIndex * k_SegmentResolution
             var distanceToTimes = new NativeArray<DistanceToInterpolation>(SegmentResolution, Allocator.Temp);
             var upVectors = new NativeArray<float3>(SegmentResolution, Allocator.Temp);
 

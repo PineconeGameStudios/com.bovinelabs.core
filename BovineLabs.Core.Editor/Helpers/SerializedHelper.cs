@@ -60,7 +60,6 @@ namespace BovineLabs.Core.Editor.Helpers
                         {
                             foreach (var child in GetChildren(iterator))
                             {
-                                // TODO like to be able to iterate lower
                                 yield return child;
                             }
                         }

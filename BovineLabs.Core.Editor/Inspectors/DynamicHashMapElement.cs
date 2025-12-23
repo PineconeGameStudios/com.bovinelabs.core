@@ -130,7 +130,6 @@ namespace BovineLabs.Core.Editor.Inspectors
                 return;
             }
 
-            // TODO conditional on visible
             this.listElement.Update();
             this.searchElement?.Update();
         }
