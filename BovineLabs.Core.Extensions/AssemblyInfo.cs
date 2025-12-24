@@ -3,7 +3,7 @@
 // </copyright>
 
 using System.Runtime.CompilerServices;
-#if !BL_DISABLE_PHYSICS_STATES
+#if !BL_DISABLE_PHYSICS_STATES && UNITY_PHYSICS
 using BovineLabs.Core.PhysicsStates;
 using Unity.Jobs;
 #endif
@@ -14,7 +14,7 @@ using Unity.Jobs;
 [assembly: InternalsVisibleTo("BovineLabs.Core.Extensions.Debug")]
 [assembly: InternalsVisibleTo("BovineLabs.Core.Extensions.Authoring")]
 
-#if !BL_DISABLE_PHYSICS_STATES
+#if !BL_DISABLE_PHYSICS_STATES && UNITY_PHYSICS
 [assembly: RegisterGenericJobType(typeof(EnsureCurrentEventsCapacityJob<StatefulTriggerEvent, StatefulTriggerEventContainer>))]
 [assembly: RegisterGenericJobType(typeof(EnsureCurrentEventsMapCapacityJob<StatefulTriggerEvent, StatefulTriggerEventContainer>))]
 [assembly:

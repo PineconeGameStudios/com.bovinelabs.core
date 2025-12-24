@@ -87,15 +87,14 @@ namespace BovineLabs.Core.Editor.Settings
 
         public void EnsureDefines(IReadOnlyList<string> add, IReadOnlyList<string>? remove = null)
         {
-            var newDefines = new HashSet<string>();
-            var removeDefines = new HashSet<string>();
+            bool changes = false;
 
             foreach (var d in add)
             {
                 if (!this.scriptingDefineSymbols.Contains(d))
                 {
-                    newDefines.Add(d);
                     this.scriptingDefineSymbols.Add(d);
+                    changes = true;
                 }
             }
 
@@ -105,19 +104,18 @@ namespace BovineLabs.Core.Editor.Settings
                 {
                     if (this.scriptingDefineSymbols.Contains(d))
                     {
-                        removeDefines.Add(d);
                         this.scriptingDefineSymbols.Remove(d);
+                        changes = true;
                     }
                 }
             }
 
-            if (newDefines.Count == 0 && removeDefines.Count == 0)
+            if (changes)
             {
-                return;
+                EditorUtility.SetDirty(this);
             }
 
-            EditorUtility.SetDirty(this);
-            ScriptingDefineSymbolsEditor.ApplyDefinesToAll(newDefines, removeDefines);
+            ScriptingDefineSymbolsEditor.ApplyDefinesToAll(add, remove ?? Array.Empty<string>());
         }
 
         [Serializable]

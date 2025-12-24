@@ -2,7 +2,7 @@
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
-#if !BL_DISABLE_PHYSICS_STATES
+#if !BL_DISABLE_PHYSICS_STATES && UNITY_PHYSICS
 namespace BovineLabs.Core.Authoring.PhysicsStates
 {
     using BovineLabs.Core.PhysicsStates;
