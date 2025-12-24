@@ -85,7 +85,7 @@ namespace BovineLabs.Core.Editor.Settings
             return authoring;
         }
 
-        public void EnsureDefines(IReadOnlyList<string> add, IReadOnlyList<string> remove)
+        public void EnsureDefines(IReadOnlyList<string> add, IReadOnlyList<string>? remove = null)
         {
             var newDefines = new HashSet<string>();
             var removeDefines = new HashSet<string>();
@@ -99,12 +99,15 @@ namespace BovineLabs.Core.Editor.Settings
                 }
             }
 
-            foreach (var d in remove)
+            if (remove != null)
             {
-                if (this.scriptingDefineSymbols.Contains(d))
+                foreach (var d in remove)
                 {
-                    removeDefines.Add(d);
-                    this.scriptingDefineSymbols.Remove(d);
+                    if (this.scriptingDefineSymbols.Contains(d))
+                    {
+                        removeDefines.Add(d);
+                        this.scriptingDefineSymbols.Remove(d);
+                    }
                 }
             }
 
