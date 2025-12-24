@@ -13,7 +13,7 @@ namespace BovineLabs.Core.Editor.Settings
 
     public static class ScriptingDefineSymbolsEditor
     {
-        public static void ApplyDefinesToAll(IReadOnlyList<string> scriptingDefines, IReadOnlyList<string> removeDefines)
+        public static void ApplyDefinesToAll(IReadOnlyCollection<string> scriptingDefines, IReadOnlyCollection<string> removeDefines)
         {
             foreach (var target in GetInstalledNamedBuildTargets())
             {
@@ -38,7 +38,7 @@ namespace BovineLabs.Core.Editor.Settings
             ApplyDefinesToAll(scriptingDefines, Array.Empty<string>());
         }
 
-        private static void ApplyDefines(NamedBuildTarget target, IReadOnlyList<string> addDefines, IReadOnlyList<string> removeDefines)
+        private static void ApplyDefines(NamedBuildTarget target, IReadOnlyCollection<string> addDefines, IReadOnlyCollection<string> removeDefines)
         {
             PlayerSettings.GetScriptingDefineSymbols(target, out var defines);
 

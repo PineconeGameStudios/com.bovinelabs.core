@@ -20,7 +20,7 @@ namespace BovineLabs.Core.Editor.Settings
         public const string DefaultSettingsDirectory = "Assets/Settings/Settings";
 
         [SerializeField]
-        private string[] scriptingDefineSymbols = Array.Empty<string>();
+        private List<string> scriptingDefineSymbols = new List<string>();
 
         [SerializeField]
         private KeyPath[] paths = Array.Empty<KeyPath>();
@@ -83,6 +83,38 @@ namespace BovineLabs.Core.Editor.Settings
 
             authoring = this.settingAuthoring.FirstOrDefault(k => k.World.ToLower() == world)?.Authoring;
             return authoring;
+        }
+
+        public void EnsureDefines(IReadOnlyList<string> add, IReadOnlyList<string> remove)
+        {
+            var newDefines = new HashSet<string>();
+            var removeDefines = new HashSet<string>();
+
+            foreach (var d in add)
+            {
+                if (!this.scriptingDefineSymbols.Contains(d))
+                {
+                    newDefines.Add(d);
+                    this.scriptingDefineSymbols.Add(d);
+                }
+            }
+
+            foreach (var d in remove)
+            {
+                if (this.scriptingDefineSymbols.Contains(d))
+                {
+                    removeDefines.Add(d);
+                    this.scriptingDefineSymbols.Remove(d);
+                }
+            }
+
+            if (newDefines.Count == 0 && removeDefines.Count == 0)
+            {
+                return;
+            }
+
+            EditorUtility.SetDirty(this);
+            ScriptingDefineSymbolsEditor.ApplyDefinesToAll(newDefines, removeDefines);
         }
 
         [Serializable]

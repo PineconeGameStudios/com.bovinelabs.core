@@ -4,7 +4,6 @@
 
 namespace BovineLabs.Core.Editor.Settings
 {
-    using System;
     using System.Collections.Generic;
     using BovineLabs.Core.Authoring.Settings;
     using BovineLabs.Core.Editor.Inspectors;
