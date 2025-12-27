@@ -37,7 +37,6 @@ namespace BovineLabs.Core.Editor
 
             ScriptingDefineSymbolsEditor.Initialize();
             _ = CreateEditorWorld.Initialize();
-            CreateAssetCreatorDefault.Initialize();
             LoadPrefabsAsEntities.Initialize();
             WelcomeWindow.Initialize();
             InspectorSearch.Initialize();

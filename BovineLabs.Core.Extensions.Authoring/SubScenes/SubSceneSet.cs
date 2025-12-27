@@ -7,7 +7,7 @@ namespace BovineLabs.Core.Authoring.SubScenes
 {
     using BovineLabs.Core.ObjectManagement;
 
-    [AutoRef(nameof(SubSceneSettings), nameof(SubSceneSettings.SceneSets), nameof(SubSceneSet), "Scenes", createNull:false)]
+    [AutoRef(nameof(SubSceneSettings), nameof(SubSceneSettings.SceneSets), nameof(SubSceneSet), "Scenes")]
     public class SubSceneSet : SubSceneSetBase, IUID
     {
         public int ID;

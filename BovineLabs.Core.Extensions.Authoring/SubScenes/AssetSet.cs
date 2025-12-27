@@ -10,7 +10,7 @@ namespace BovineLabs.Core.Authoring.SubScenes
     using BovineLabs.Core.SubScenes;
     using UnityEngine;
 
-    [AutoRef(nameof(SubSceneSettings), nameof(SubSceneSettings.AssetSets), nameof(AssetSet), "Scenes/Assets", createNull:false)]
+    [AutoRef(nameof(SubSceneSettings), nameof(SubSceneSettings.AssetSets), nameof(AssetSet), "Scenes/Assets")]
     public class AssetSet : ScriptableObject
     {
         public List<GameObject> Assets = new();
