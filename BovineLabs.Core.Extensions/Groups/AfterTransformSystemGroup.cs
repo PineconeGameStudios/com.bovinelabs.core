@@ -13,7 +13,9 @@ namespace BovineLabs.Core.Groups
     /// </summary>
     [WorldSystemFilter(Worlds.SimulationEditor | Worlds.Menu, Worlds.Simulation)]
     [UpdateAfter(typeof(TransformSystemGroup))]
+#if !UNITY_DISABLE_MANAGED_COMPONENTS
     [UpdateAfter(typeof(CompanionGameObjectUpdateTransformSystem))]
+#endif
     public partial class AfterTransformSystemGroup : BLSimulationSystemGroup
     {
     }

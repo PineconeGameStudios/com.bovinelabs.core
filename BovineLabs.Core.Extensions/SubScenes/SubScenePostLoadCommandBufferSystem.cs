@@ -28,7 +28,12 @@ namespace BovineLabs.Core.SubScenes
 
         protected override void OnCreate()
         {
-            this.query = SystemAPI.QueryBuilder().WithAll<SceneReference>().WithNone<PostLoadCommandBuffer>().Build();
+            this.query = SystemAPI.QueryBuilder().WithAll<SceneReference>()
+#if !UNITY_DISABLE_MANAGED_COMPONENTS
+                .WithNone<PostLoadCommandBuffer>()
+#endif
+                .Build();
+
             this.RequireForUpdate(this.query);
 
             foreach (var p in ReflectionUtility.GetAllImplementations<ICreatePostLoadCommandBuffer>())

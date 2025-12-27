@@ -6,13 +6,13 @@ namespace BovineLabs.Core.ConfigVars
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Reflection;
     using System.Text.RegularExpressions;
     using BovineLabs.Core.Utility;
     using Unity.Burst;
     using Unity.Collections;
     using UnityEngine;
-    using Debug = UnityEngine.Debug;
 #if UNITY_EDITOR
     using UnityEditor;
 #endif
@@ -65,7 +65,8 @@ namespace BovineLabs.Core.ConfigVars
 
             isInitialized = true;
 
-            foreach (var (configVar, field) in FindAllConfigVars())
+            // We make sure to always initialize the logger first so we can use this here
+            foreach (var (configVar, field) in FindAllConfigVars().OrderByDescending(v => v.ConfigVar.Name == BLLogger.LogLevelName))
             {
                 var fieldValue = field.GetValue(null);
 
@@ -73,7 +74,7 @@ namespace BovineLabs.Core.ConfigVars
 
                 if (container is NullConfigVarContainer)
                 {
-                    Debug.LogError($"E | ConfigVar on field ({field.Name} in {field.DeclaringType?.Name}) of type ({field.FieldType}) is not a supported type");
+                    BLGlobalLogger.LogErrorString($"ConfigVar on field ({field.Name} in {field.DeclaringType?.Name}) of type ({field.FieldType}) is not a supported type");
                     continue;
                 }
 
@@ -84,12 +85,12 @@ namespace BovineLabs.Core.ConfigVars
                     try
                     {
                         container.StringValue = value;
-                        Debug.Log($"I | ConfigVar {configVar.Name} set from command line to {value}");
+                        BLGlobalLogger.LogInfoString($"{configVar.Name} set from command line to {value}");
                     }
                     catch (Exception)
                     {
-                        Debug.LogError(
-                            $"E | Trying to set a ConfigVar {configVar.Name} value of {value} which is not in the right type format. Falling back to default.");
+                        BLGlobalLogger.LogErrorString(
+                            $"Trying to set a ConfigVar {configVar.Name} value of {value} which is not in the right type format. Falling back to default.");
 
                         container.StringValue = configVar.DefaultValue;
                     }
@@ -98,9 +99,12 @@ namespace BovineLabs.Core.ConfigVars
                 {
 #if UNITY_EDITOR
                     container.StringValue = EditorPrefs.GetString(configVar.Name, configVar.DefaultValue);
+                    BLGlobalLogger.LogDebugString($"{configVar.Name} set from editor prefs to {container.StringValue}");
 #else
                     container.StringValue = configVar.DefaultValue;
+                    BLGlobalLogger.LogDebugString($"{configVar.Name} set from default value to {container.StringValue}");
 #endif
+
                 }
             }
         }
@@ -135,13 +139,13 @@ namespace BovineLabs.Core.ConfigVars
         {
             if (AllInternal.ContainsKey(configVar))
             {
-                Debug.LogError($"E | Trying to register ConfigVar {configVar.Name} twice");
+                BLGlobalLogger.LogErrorString($"Trying to register ConfigVar {configVar.Name} twice");
                 return;
             }
 
             if (!ValidateNameRegex.IsMatch(configVar.Name))
             {
-                Debug.LogError($"E | Trying to register ConfigVar with invalid name: {configVar.Name}");
+                BLGlobalLogger.LogErrorString($"Trying to register ConfigVar with invalid name: {configVar.Name}");
                 return;
             }
 

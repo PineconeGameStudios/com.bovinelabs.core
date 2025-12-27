@@ -24,7 +24,7 @@ namespace BovineLabs.Core.Utility
         {
             if (mesh.subMeshCount > 1)
             {
-                Debug.LogWarning("Only supports single sub mesh");
+                BLGlobalLogger.LogWarningString("Only supports single sub mesh");
             }
 
             var vertices = mesh.vertices;
