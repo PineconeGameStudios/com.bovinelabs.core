@@ -12,13 +12,6 @@ namespace BovineLabs.Core.Collections
 
     public struct BlobCurveHeader
     {
-        public enum WrapMode : short
-        {
-            Clamp = 0,
-            Loop = 1,
-            PingPong = 2,
-        }
-
         public WrapMode WrapModePrev;
         public WrapMode WrapModePost;
         public int SegmentCount;
@@ -26,6 +19,13 @@ namespace BovineLabs.Core.Collections
         public float EndTime;
 
         internal BlobArray<float> Times;
+
+        public enum WrapMode : short
+        {
+            Clamp = 0,
+            Loop = 1,
+            PingPong = 2,
+        }
 
         public float Duration => this.EndTime - this.StartTime;
 
