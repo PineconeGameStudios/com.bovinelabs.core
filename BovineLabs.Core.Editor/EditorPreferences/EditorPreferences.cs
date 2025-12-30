@@ -34,7 +34,7 @@ namespace BovineLabs.Core.Editor.EditorPreferences
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                BLGlobalLogger.LogFatal(ex);
             }
         }
 
@@ -141,7 +141,7 @@ namespace BovineLabs.Core.Editor.EditorPreferences
         {
             if (typeof(T) == typeof(EditorPreferenceAttribute))
             {
-                Debug.LogError(
+                BLGlobalLogger.LogError(
                     $"{Prefix} Constraint of type `{nameof(EditorPreferenceAttribute)}` is not allowed, you must use a derived type of type `{nameof(EditorPreferenceAttribute)}`.");
 
                 return;
@@ -158,7 +158,7 @@ namespace BovineLabs.Core.Editor.EditorPreferences
 
                 if (!typeof(IEditorPreference).IsAssignableFrom(type))
                 {
-                    Debug.LogError($"{Prefix} type `{type.FullName}` must implement `{typeof(IEditorPreference)}` in order to be used as a preference.");
+                    BLGlobalLogger.LogError($"{Prefix} type `{type.FullName}` must implement `{typeof(IEditorPreference)}` in order to be used as a preference.");
                     continue;
                 }
 
@@ -166,7 +166,7 @@ namespace BovineLabs.Core.Editor.EditorPreferences
                 var getOrCreateMethod = typedUserSettings.GetMethod("GetOrCreate", BindingFlags.Static | BindingFlags.Public);
                 if (getOrCreateMethod == null)
                 {
-                    Debug.LogError($"{Prefix} Could not find the `GetOrCreate` method on `{userSettingsType.FullName}` class.");
+                    BLGlobalLogger.LogError($"{Prefix} Could not find the `GetOrCreate` method on `{userSettingsType.FullName}` class.");
                     continue;
                 }
 

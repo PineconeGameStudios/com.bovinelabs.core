@@ -362,7 +362,7 @@ namespace BovineLabs.Core.Editor.Welcome
             }
             else if (this.packageListRequest.Status >= StatusCode.Failure)
             {
-                Debug.LogError($"Failed to list packages: {this.packageListRequest.Error.message}");
+                BLGlobalLogger.LogError($"Failed to list packages: {this.packageListRequest.Error.message}");
 
                 foreach (var package in this.packages)
                 {
@@ -433,7 +433,7 @@ namespace BovineLabs.Core.Editor.Welcome
             {
                 if (!this.packageLookup.TryGetValue(dependencyName, out var dependency))
                 {
-                    Debug.LogWarning($"Unable to find dependency \"{dependencyName}\" for {package.PackageName}.");
+                    BLGlobalLogger.LogWarning($"Unable to find dependency \"{dependencyName}\" for {package.PackageName}.");
                     continue;
                 }
 
@@ -493,7 +493,7 @@ namespace BovineLabs.Core.Editor.Welcome
                 {
                     package.Installed = false;
                     package.HadError = true;
-                    Debug.LogError($"Failed to install {package.PackageName}: {request.Error.message}");
+                    BLGlobalLogger.LogError($"Failed to install {package.PackageName}: {request.Error.message}");
                 }
 
                 package.InstallRequest = null;

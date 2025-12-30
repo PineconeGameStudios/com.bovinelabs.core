@@ -240,7 +240,7 @@ namespace BovineLabs.Core.Editor.Windows.Favourites
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"Failed to save favourites: {ex.Message}");
+                BLGlobalLogger.LogWarning($"Failed to save favourites: {ex.Message}");
             }
         }
 
@@ -274,7 +274,7 @@ namespace BovineLabs.Core.Editor.Windows.Favourites
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"Failed to load favourites: {ex.Message}");
+                BLGlobalLogger.LogWarning($"Failed to load favourites: {ex.Message}");
             }
         }
     }

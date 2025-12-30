@@ -286,7 +286,7 @@ namespace BovineLabs.Core.Editor.Windows.Favourites
                 }
                 else if (allObjects.Length > 0)
                 {
-                    Debug.Log("Only assets can be added to favourites, not scene objects");
+                    BLGlobalLogger.LogInfo("Only assets can be added to favourites, not scene objects");
                 }
             });
         }
