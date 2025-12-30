@@ -116,11 +116,13 @@ namespace BovineLabs.Core.Collections
                 var key0X = xKeys[0];
                 var key0Y = yKeys[0];
                 var key0Z = zKeys[0];
-                var key0W = zKeys[0];
+                var key0W = wKeys[0];
                 builder.Allocate(ref blobCurve.segments, 1)[0] = new BlobCurveSegment4(key0X, key0Y, key0Z, key0W, key0X, key0Y, key0Z, key0W);
 
                 var timeBuilder = builder.Allocate(ref blobCurve.header.Times, 4);
                 timeBuilder[0] = timeBuilder[1] = timeBuilder[2] = timeBuilder[3] = key0X.time;
+                blobCurve.header.StartTime = key0X.time;
+                blobCurve.header.EndTime = key0X.time;
             }
             else
             {
@@ -158,6 +160,8 @@ namespace BovineLabs.Core.Collections
                 builder.Allocate(ref blobCurve.segments, 1)[0] = BlobCurveSegment4.Linear4(v0, v0);
                 var timeBuilder = builder.Allocate(ref blobCurve.header.Times, 4);
                 timeBuilder[0] = timeBuilder[1] = timeBuilder[2] = timeBuilder[3] = times[0];
+                blobCurve.header.StartTime = times[0];
+                blobCurve.header.EndTime = times[0];
             }
             else
             {
@@ -196,12 +200,14 @@ namespace BovineLabs.Core.Collections
                 builder.Allocate(ref data.segments, 1)[0] = BlobCurveSegment4.Bezier4(v0, v0, v0, v0);
                 var timeBuilder = builder.Allocate(ref data.header.Times, 4);
                 timeBuilder[0] = timeBuilder[1] = timeBuilder[2] = timeBuilder[3] = times[0];
+                data.header.StartTime = times[0];
+                data.header.EndTime = times[0];
             }
             else
             {
                 var timeBuilder = builder.Allocate(ref data.header.Times, vertCount + 2);
                 var segBuilder = builder.Allocate(ref data.segments, segmentCount);
-                for (int i = 0, j = 1; j < segmentCount; i = j++)
+                for (int i = 0, j = 1; i < segmentCount; i = j++)
                 {
                     timeBuilder[j] = times[i];
                     segBuilder[i] = BlobCurveSegment4.Bezier4(vertices[i], cvs[i].c1, cvs[j].c0, vertices[j]);

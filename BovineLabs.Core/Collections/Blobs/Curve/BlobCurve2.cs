@@ -115,6 +115,8 @@ namespace BovineLabs.Core.Collections
                 var timeBuilder = builder.Allocate(ref blobCurve.header.Times, 4);
                 timeBuilder[0] = timeBuilder[1] = timeBuilder[2] = timeBuilder[3] = key0X.time;
                 builder.Allocate(ref blobCurve.segments, 1)[0] = new BlobCurveSegment2(key0X, key0Y, key0X, key0Y);
+                blobCurve.header.StartTime = key0X.time;
+                blobCurve.header.EndTime = key0X.time;
             }
             else
             {
@@ -152,6 +154,8 @@ namespace BovineLabs.Core.Collections
                 var timeBuilder = builder.Allocate(ref blobCurve.header.Times, 4);
                 timeBuilder[0] = timeBuilder[1] = timeBuilder[2] = timeBuilder[3] = times[0];
                 builder.Allocate(ref blobCurve.segments, 1)[0] = BlobCurveSegment2.Linear2(v0, v0);
+                blobCurve.header.StartTime = times[0];
+                blobCurve.header.EndTime = times[0];
             }
             else
             {
@@ -191,12 +195,14 @@ namespace BovineLabs.Core.Collections
                 var timeBuilder = builder.Allocate(ref blobCurve.header.Times, 4);
                 timeBuilder[0] = timeBuilder[1] = timeBuilder[2] = timeBuilder[3] = times[0];
                 builder.Allocate(ref blobCurve.segments, 1)[0] = BlobCurveSegment2.Bezier2(v0, v0, v0, v0);
+                blobCurve.header.StartTime = times[0];
+                blobCurve.header.EndTime = times[0];
             }
             else
             {
                 var timeBuilder = builder.Allocate(ref blobCurve.header.Times, vertCount + 2);
                 var segBuilder = builder.Allocate(ref blobCurve.segments, segmentCount);
-                for (int i = 0, j = 1; j < segmentCount; i = j++)
+                for (int i = 0, j = 1; i < segmentCount; i = j++)
                 {
                     timeBuilder[j] = times[i];
                     segBuilder[i] = BlobCurveSegment2.Bezier2(vertices[i], cvs[i].c1, cvs[j].c0, vertices[j]);
