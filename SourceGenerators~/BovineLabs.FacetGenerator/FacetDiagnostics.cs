@@ -23,7 +23,7 @@ namespace BovineLabs.FacetGenerator
         internal static readonly DiagnosticDescriptor UnsupportedFieldDescriptor = new DiagnosticDescriptor(
             "BLFCT0002",
             "Facet field type not supported",
-            "Field '{0}' of type '{1}' is not supported. Supported types are RefRO<T>, RefRW<T>, EnabledRefRO<T>, EnabledRefRW<T>, DynamicBuffer<T>, Entity, EntityStorageInfo, and fields marked with [Singleton].",
+            "Field '{0}' of type '{1}' is not supported. Supported types are RefRO<T>, RefRW<T>, EnabledRefRO<T>, EnabledRefRW<T>, DynamicBuffer<T>, ComponentLookup<T>, BufferLookup<T>, Entity, EntityStorageInfo, EntityStorageInfoLookup, and fields marked with [Singleton].",
             Category,
             DiagnosticSeverity.Error,
             true);

@@ -23,6 +23,9 @@ namespace BovineLabs.FacetGenerator
         DynamicBuffer,
         Entity,
         EntityStorageInfo,
+        EntityStorageInfoLookup,
+        ComponentLookup,
+        BufferLookup,
         Singleton,
         Facet,
     }
@@ -143,6 +146,9 @@ namespace BovineLabs.FacetGenerator
             INamedTypeSymbol singletonAttribute = symbols.SingletonAttribute;
             INamedTypeSymbol entityType = symbols.EntityType;
             INamedTypeSymbol entityStorageInfoType = symbols.EntityStorageInfoType;
+            INamedTypeSymbol entityStorageInfoLookupType = symbols.EntityStorageInfoLookupType;
+            INamedTypeSymbol componentLookupType = symbols.ComponentLookupType;
+            INamedTypeSymbol bufferLookupType = symbols.BufferLookupType;
 
             var fields = new List<FacetField>();
             foreach (var fieldSymbol in typeSymbol.GetMembers().OfType<IFieldSymbol>())
@@ -154,7 +160,20 @@ namespace BovineLabs.FacetGenerator
                     continue;
                 }
 
-                if (TryCreateFacetField(fieldSymbol, optionalAttribute, facetAttribute, readOnlyAttribute, singletonAttribute, entityType, entityStorageInfoType, facetInterface, diagnostics, out var field))
+                if (TryCreateFacetField(
+                    fieldSymbol,
+                    optionalAttribute,
+                    facetAttribute,
+                    readOnlyAttribute,
+                    singletonAttribute,
+                    entityType,
+                    entityStorageInfoType,
+                    entityStorageInfoLookupType,
+                    componentLookupType,
+                    bufferLookupType,
+                    facetInterface,
+                    diagnostics,
+                    out var field))
                 {
                     fields.Add(field);
                 }
@@ -320,6 +339,9 @@ namespace BovineLabs.FacetGenerator
             INamedTypeSymbol singletonAttribute,
             INamedTypeSymbol entityType,
             INamedTypeSymbol entityStorageInfoType,
+            INamedTypeSymbol entityStorageInfoLookupType,
+            INamedTypeSymbol componentLookupType,
+            INamedTypeSymbol bufferLookupType,
             INamedTypeSymbol facetInterface,
             IList<Diagnostic> diagnostics,
             out FacetField field)
@@ -365,10 +387,28 @@ namespace BovineLabs.FacetGenerator
                 return true;
             }
 
+            if (entityStorageInfoLookupType != null && SymbolEqualityComparer.Default.Equals(fieldSymbol.Type, entityStorageInfoLookupType))
+            {
+                field = new FacetField(fieldSymbol, fieldSymbol.Type, FacetFieldKind.EntityStorageInfoLookup, isOptional, true);
+                return true;
+            }
+
             if (fieldSymbol.Type is not INamedTypeSymbol namedType || namedType.TypeArguments.Length != 1)
             {
                 diagnostics?.Add(FacetDiagnostics.UnsupportedField(fieldSymbol, fieldSymbol.Locations.FirstOrDefault()));
                 return false;
+            }
+
+            if (componentLookupType != null && SymbolEqualityComparer.Default.Equals(namedType.OriginalDefinition, componentLookupType))
+            {
+                field = new FacetField(fieldSymbol, namedType.TypeArguments[0], FacetFieldKind.ComponentLookup, isOptional, hasReadOnlyAttribute);
+                return true;
+            }
+
+            if (bufferLookupType != null && SymbolEqualityComparer.Default.Equals(namedType.OriginalDefinition, bufferLookupType))
+            {
+                field = new FacetField(fieldSymbol, namedType.TypeArguments[0], FacetFieldKind.BufferLookup, isOptional, hasReadOnlyAttribute);
+                return true;
             }
 
             FacetFieldKind kind;
@@ -502,7 +542,7 @@ namespace BovineLabs.FacetGenerator
         private static void AddCreateQueryBuilder(ClassBuilder typeBuilder, FacetData data)
         {
             var queries = data.Fields
-                .Where(f => !f.IsOptional && !f.IsSingleton && !f.IsFacet && !f.IsEntity && !f.IsEntityStorageInfo)
+                .Where(f => !f.IsOptional && !f.IsSingleton && !f.IsFacet && !f.IsEntity && !f.IsEntityStorageInfo && !f.IsEntityStorageInfoLookup && !f.IsComponentLookup && !f.IsBufferLookup)
                 .Select(GetQueryBuilderInvocation)
                 .ToArray();
 
@@ -604,9 +644,21 @@ namespace BovineLabs.FacetGenerator
                         continue;
                     }
 
-                    if (field.IsEntityStorageInfo)
+                    if (field.IsEntityStorageInfo || field.IsEntityStorageInfoLookup)
                     {
                         body.AppendLine($"this.{field.LookupFieldName} = state.GetEntityStorageInfoLookup();");
+                        continue;
+                    }
+
+                    if (field.IsComponentLookup)
+                    {
+                        body.AppendLine($"this.{field.LookupFieldName} = state.GetComponentLookup<{field.ComponentTypeName}>({(field.IsReadOnly ? "true" : string.Empty)});");
+                        continue;
+                    }
+
+                    if (field.IsBufferLookup)
+                    {
+                        body.AppendLine($"this.{field.LookupFieldName} = state.GetBufferLookup<{field.ComponentTypeName}>({(field.IsReadOnly ? "true" : string.Empty)});");
                         continue;
                     }
 
@@ -707,9 +759,21 @@ namespace BovineLabs.FacetGenerator
                         continue;
                     }
 
-                    if (field.IsEntityStorageInfo)
+                    if (field.IsEntityStorageInfo || field.IsEntityStorageInfoLookup)
                     {
                         body.AppendLine($"this.{field.HandleName} = state.GetEntityStorageInfoLookup();");
+                        continue;
+                    }
+
+                    if (field.IsComponentLookup)
+                    {
+                        body.AppendLine($"this.{field.HandleName} = state.GetComponentLookup<{field.ComponentTypeName}>({(field.IsReadOnly ? "true" : string.Empty)});");
+                        continue;
+                    }
+
+                    if (field.IsBufferLookup)
+                    {
+                        body.AppendLine($"this.{field.HandleName} = state.GetBufferLookup<{field.ComponentTypeName}>({(field.IsReadOnly ? "true" : string.Empty)});");
                         continue;
                     }
 
@@ -774,11 +838,15 @@ namespace BovineLabs.FacetGenerator
                             ? GetFacetResolveExpression(field)
                         : field.IsEntity
                             ? GetEntityResolveExpression(field)
-                            : field.IsEntityStorageInfo
-                                ? GetEntityStorageInfoResolveExpression()
-                                : field.IsBuffer
-                                    ? GetBufferResolveExpression(field)
-                                    : field.IsEnabled ? GetEnabledResolveExpression(field) : GetComponentResolveExpression(field);
+                        : field.IsEntityStorageInfo
+                            ? GetEntityStorageInfoResolveExpression()
+                        : field.IsEntityStorageInfoLookup
+                            ? $"this.{field.HandleName}"
+                        : field.IsComponentLookup || field.IsBufferLookup
+                            ? $"this.{field.HandleName}"
+                            : field.IsBuffer
+                                ? GetBufferResolveExpression(field)
+                                : field.IsEnabled ? GetEnabledResolveExpression(field) : GetComponentResolveExpression(field);
                     return $"{field.ResolvedFieldName} = {value},";
                 });
 
@@ -860,6 +928,15 @@ namespace BovineLabs.FacetGenerator
                         writer.AppendLine($"var {name} = {lookup}[entity];");
                     }
 
+                    break;
+
+                case FacetFieldKind.EntityStorageInfoLookup:
+                    writer.AppendLine($"var {name} = {lookup};");
+                    break;
+
+                case FacetFieldKind.ComponentLookup:
+                case FacetFieldKind.BufferLookup:
+                    writer.AppendLine($"var {name} = {lookup};");
                     break;
 
                 case FacetFieldKind.Singleton:
@@ -1004,6 +1081,16 @@ namespace BovineLabs.FacetGenerator
             if (field.IsEntityStorageInfo)
             {
                 return $"new EntityStorageInfo {{ Chunk = this.{field.ResolvedFieldName}, IndexInChunk = index }}";
+            }
+
+            if (field.IsEntityStorageInfoLookup)
+            {
+                return $"this.{field.ResolvedFieldName}";
+            }
+
+            if (field.IsComponentLookup || field.IsBufferLookup)
+            {
+                return $"this.{field.ResolvedFieldName}";
             }
 
             if (field.IsBuffer)
@@ -1164,7 +1251,10 @@ namespace BovineLabs.FacetGenerator
             INamedTypeSymbol readOnlyAttribute,
             INamedTypeSymbol singletonAttribute,
             INamedTypeSymbol entityType,
-            INamedTypeSymbol entityStorageInfoType)
+            INamedTypeSymbol entityStorageInfoType,
+            INamedTypeSymbol entityStorageInfoLookupType,
+            INamedTypeSymbol componentLookupType,
+            INamedTypeSymbol bufferLookupType)
         {
             this.FacetInterface = facetInterface;
             this.OptionalAttribute = optionalAttribute;
@@ -1173,6 +1263,9 @@ namespace BovineLabs.FacetGenerator
             this.SingletonAttribute = singletonAttribute;
             this.EntityType = entityType;
             this.EntityStorageInfoType = entityStorageInfoType;
+            this.EntityStorageInfoLookupType = entityStorageInfoLookupType;
+            this.ComponentLookupType = componentLookupType;
+            this.BufferLookupType = bufferLookupType;
         }
 
         public INamedTypeSymbol FacetInterface { get; }
@@ -1189,6 +1282,12 @@ namespace BovineLabs.FacetGenerator
 
         public INamedTypeSymbol EntityStorageInfoType { get; }
 
+        public INamedTypeSymbol EntityStorageInfoLookupType { get; }
+
+        public INamedTypeSymbol ComponentLookupType { get; }
+
+        public INamedTypeSymbol BufferLookupType { get; }
+
         public static FacetSymbols Create(Compilation compilation)
         {
             return new FacetSymbols(
@@ -1198,7 +1297,10 @@ namespace BovineLabs.FacetGenerator
                 compilation.GetTypeByMetadataName("Unity.Collections.ReadOnlyAttribute"),
                 compilation.GetTypeByMetadataName("BovineLabs.Core.SingletonAttribute"),
                 compilation.GetTypeByMetadataName("Unity.Entities.Entity"),
-                compilation.GetTypeByMetadataName("Unity.Entities.EntityStorageInfo"));
+                compilation.GetTypeByMetadataName("Unity.Entities.EntityStorageInfo"),
+                compilation.GetTypeByMetadataName("Unity.Entities.EntityStorageInfoLookup"),
+                compilation.GetTypeByMetadataName("Unity.Entities.ComponentLookup`1"),
+                compilation.GetTypeByMetadataName("Unity.Entities.BufferLookup`1"));
         }
     }
 
@@ -1264,6 +1366,12 @@ namespace BovineLabs.FacetGenerator
 
         public bool IsEntityStorageInfo => this.Kind == FacetFieldKind.EntityStorageInfo;
 
+        public bool IsEntityStorageInfoLookup => this.Kind == FacetFieldKind.EntityStorageInfoLookup;
+
+        public bool IsComponentLookup => this.Kind == FacetFieldKind.ComponentLookup;
+
+        public bool IsBufferLookup => this.Kind == FacetFieldKind.BufferLookup;
+
         public bool IsSingleton => this.Kind == FacetFieldKind.Singleton;
 
         public bool IsBuffer => this.Kind == FacetFieldKind.DynamicBuffer;
@@ -1286,7 +1394,7 @@ namespace BovineLabs.FacetGenerator
         {
             get
             {
-                if (this.IsSingleton || this.IsFacet || this.IsEntityStorageInfo)
+                if (this.IsSingleton || this.IsFacet || this.IsEntityStorageInfo || this.IsEntityStorageInfoLookup || this.IsComponentLookup || this.IsBufferLookup)
                 {
                     return this.PascalFieldName;
                 }
@@ -1304,7 +1412,7 @@ namespace BovineLabs.FacetGenerator
         {
             get
             {
-                if (this.IsSingleton || this.IsFacet || this.IsEntityStorageInfo)
+                if (this.IsSingleton || this.IsFacet || this.IsEntityStorageInfo || this.IsEntityStorageInfoLookup || this.IsComponentLookup || this.IsBufferLookup)
                 {
                     return this.PascalFieldName;
                 }
@@ -1327,7 +1435,7 @@ namespace BovineLabs.FacetGenerator
                     return this.PascalFieldName;
                 }
 
-                if (this.IsFacet || this.IsEntityStorageInfo)
+                if (this.IsFacet || this.IsEntityStorageInfo || this.IsEntityStorageInfoLookup || this.IsComponentLookup || this.IsBufferLookup)
                 {
                     return $"{this.PascalFieldName}Handle";
                 }
@@ -1340,8 +1448,10 @@ namespace BovineLabs.FacetGenerator
             ? this.FieldTypeName
             : this.IsFacet
                 ? $"{this.ComponentTypeName}.Lookup"
-                : this.IsEntityStorageInfo
+                : this.IsEntityStorageInfo || this.IsEntityStorageInfoLookup
                     ? "EntityStorageInfoLookup"
+                    : this.IsComponentLookup || this.IsBufferLookup
+                        ? this.FieldTypeName
                     : this.IsEntity
                         ? this.ComponentTypeName
                         : this.IsBuffer
@@ -1382,6 +1492,16 @@ namespace BovineLabs.FacetGenerator
                     return "ArchetypeChunk";
                 }
 
+                if (this.IsEntityStorageInfoLookup)
+                {
+                    return "EntityStorageInfoLookup";
+                }
+
+                if (this.IsComponentLookup || this.IsBufferLookup)
+                {
+                    return this.FieldTypeName;
+                }
+
                 if (this.IsEnabled)
                 {
                     return "EnabledMask";
@@ -1395,8 +1515,10 @@ namespace BovineLabs.FacetGenerator
             ? this.FieldTypeName
             : this.IsFacet
                 ? $"{this.ComponentTypeName}.TypeHandle"
-                : this.IsEntityStorageInfo
+                : this.IsEntityStorageInfo || this.IsEntityStorageInfoLookup
                     ? "EntityStorageInfoLookup"
+                    : this.IsComponentLookup || this.IsBufferLookup
+                        ? this.FieldTypeName
                     : this.IsEntity
                         ? "EntityTypeHandle"
                         : this.IsBuffer
