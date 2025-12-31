@@ -5,7 +5,7 @@
 ## Declaring a facet
 
 - Use a `partial struct` that implements `IFacet`.
-- Supported fields include `RefRO<T>`, `RefRW<T>`, `EnabledRefRO<T>`, `EnabledRefRW<T>`, `DynamicBuffer<T>`, `Entity`, plain component fields marked with `[Singleton]`, and other facets marked with `[Facet]`.
+- Supported fields include `RefRO<T>`, `RefRW<T>`, `EnabledRefRO<T>`, `EnabledRefRW<T>`, `DynamicBuffer<T>`, `Entity`, `EntityStorageInfo`, plain component fields marked with `[Singleton]`, and other facets marked with `[Facet]`.
 - Add `[FacetOptional]` to allow a field to be missing on the entity; add `[ReadOnly]` on buffers when you only need read-only access.
 
 ```csharp
@@ -74,6 +74,7 @@ public partial struct CompositeFacet : IFacet
 - Use `Lookup.Create(ref state)` once during system creation and `Lookup.Update(ref state)` each update to keep lookups current.
 - If your facet has `[Singleton]` fields, pass those values into both `Lookup.Update` and `TypeHandle.Update`; the signatures expand with one `in T` parameter per singleton.
 - `Entity` fields are always available on the lookup; they are not added to the query and simply pass through the entity id.
+- `EntityStorageInfo` fields use `EntityStorageInfoLookup` for lookups and resolve from the current chunk and index for chunk iteration.
 - `CreateQueryBuilder` ignores optional fields and singletons, so add any custom filters (e.g., tags) yourself when building the query.
 - `Lookup.TryGet(Entity, out TFacet)` returns `false` only when required fields are missing; optional components and buffers remain safely defaulted when absent.
 - `TypeHandle` and `ResolvedChunk` support chunk iteration scenarios where you want to materialize a facet for each entity in a chunk.
