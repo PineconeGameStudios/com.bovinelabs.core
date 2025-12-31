@@ -505,6 +505,8 @@ namespace BovineLabs.FacetGenerator
                 }
             }
 
+            ResolveResolvedFieldNameConflicts(data.Fields);
+
             var typeBuilder = builder
                 .AddClass(data.TypeSymbol.Name)
                 .WithAccessModifier(data.TypeSymbol.DeclaredAccessibility)
@@ -572,14 +574,16 @@ namespace BovineLabs.FacetGenerator
                 .WithSummary($"Provides entity-level access to {data.TypeName}.");
 
             var lookupFields = data.Fields.Where(f => !f.IsSingleton && !f.IsEntity).ToArray();
+            var lookupSlots = GetLookupSlots(lookupFields);
             var singletonFields = data.Fields.Where(f => f.IsSingleton).ToArray();
             var singletonDependencies = data.SingletonDependencies;
 
-            foreach (var field in lookupFields)
+            foreach (var slot in lookupSlots)
             {
+                var field = slot.Field;
                 var lookupField = lookup.AddProperty(field.LookupFieldName, Accessibility.Public).SetType(field.LookupTypeName);
 
-                if (field.IsReadOnly)
+                if (slot.IsReadOnly)
                 {
                     lookupField.AddAttribute("ReadOnly");
                 }
@@ -636,8 +640,11 @@ namespace BovineLabs.FacetGenerator
                 .WithParameterDoc("state", "System state providing lookup handles.");
             create.WithBody(body =>
             {
-                foreach (var field in lookupFields)
+                foreach (var slot in lookupSlots)
                 {
+                    var field = slot.Field;
+                    var readOnlyArgument = slot.IsReadOnly ? "true" : string.Empty;
+
                     if (field.IsFacet)
                     {
                         body.AppendLine($"this.{field.LookupFieldName}.Create(ref state);");
@@ -652,19 +659,19 @@ namespace BovineLabs.FacetGenerator
 
                     if (field.IsComponentLookup)
                     {
-                        body.AppendLine($"this.{field.LookupFieldName} = state.GetComponentLookup<{field.ComponentTypeName}>({(field.IsReadOnly ? "true" : string.Empty)});");
+                        body.AppendLine($"this.{field.LookupFieldName} = state.GetComponentLookup<{field.ComponentTypeName}>({readOnlyArgument});");
                         continue;
                     }
 
                     if (field.IsBufferLookup)
                     {
-                        body.AppendLine($"this.{field.LookupFieldName} = state.GetBufferLookup<{field.ComponentTypeName}>({(field.IsReadOnly ? "true" : string.Empty)});");
+                        body.AppendLine($"this.{field.LookupFieldName} = state.GetBufferLookup<{field.ComponentTypeName}>({readOnlyArgument});");
                         continue;
                     }
 
                     var lookupExpression = field.IsBuffer
-                        ? $"state.GetBufferLookup<{field.ComponentTypeName}>({(field.IsReadOnly ? "true" : string.Empty)})"
-                        : $"state.GetComponentLookup<{field.ComponentTypeName}>({(field.IsReadOnly ? "true" : string.Empty)})";
+                        ? $"state.GetBufferLookup<{field.ComponentTypeName}>({readOnlyArgument})"
+                        : $"state.GetComponentLookup<{field.ComponentTypeName}>({readOnlyArgument})";
 
                     body.AppendLine($"this.{field.LookupFieldName} = {lookupExpression};");
                 }
@@ -685,8 +692,10 @@ namespace BovineLabs.FacetGenerator
 
             update.WithBody(body =>
             {
-                foreach (var field in lookupFields)
+                foreach (var slot in lookupSlots)
                 {
+                    var field = slot.Field;
+
                     if (field.IsFacet)
                     {
                         body.AppendLine($"this.{field.LookupFieldName}.Update(ref state{GetFacetSingletonArguments(field)});");
@@ -704,13 +713,36 @@ namespace BovineLabs.FacetGenerator
             });
         }
 
+        private static IReadOnlyList<LookupSlot> GetLookupSlots(IEnumerable<FacetField> fields)
+        {
+            return fields
+                .GroupBy(field => (field.LookupFieldName, field.LookupTypeName))
+                .Select(group => new LookupSlot(group.First(), group.All(field => field.IsReadOnly)))
+                .ToArray();
+        }
+
+        private sealed class LookupSlot
+        {
+            public LookupSlot(FacetField field, bool isReadOnly)
+            {
+                this.Field = field;
+                this.IsReadOnly = isReadOnly;
+            }
+
+            public FacetField Field { get; }
+
+            public bool IsReadOnly { get; }
+        }
+
         private static void AddResolvedChunk(ClassBuilder typeBuilder, FacetData data)
         {
             var resolvedChunk = typeBuilder.AddNestedClass("ResolvedChunk", false, Accessibility.Public)
                 .IsStruct()
                 .WithSummary($"Chunk-level accessors for {data.TypeName}.");
 
-            foreach (var field in data.Fields)
+            var resolvedFields = GetUniqueResolvedFields(data.Fields);
+
+            foreach (var field in resolvedFields)
             {
                 resolvedChunk.AddProperty(field.ResolvedFieldName, Accessibility.Public).SetType(field.ResolvedFieldTypeName);
             }
@@ -723,6 +755,80 @@ namespace BovineLabs.FacetGenerator
             var arguments = data.Fields.Select(GetResolvedArgument).ToArray();
 
             resolvedIndexer.WithGetterExpression($"new {data.TypeName}({string.Join(", ", arguments)})");
+        }
+
+        private static void ResolveResolvedFieldNameConflicts(IReadOnlyList<FacetField> fields)
+        {
+            var usedNames = new HashSet<string>(StringComparer.Ordinal);
+
+            foreach (var field in fields)
+            {
+                usedNames.Add(field.ResolvedFieldName);
+            }
+
+            foreach (var group in fields.GroupBy(field => field.ResolvedFieldName, StringComparer.Ordinal))
+            {
+                if (group.Select(field => field.ResolvedFieldTypeName).Distinct(StringComparer.Ordinal).Skip(1).Any())
+                {
+                    var keep = group.FirstOrDefault(field => !IsLookupField(field)) ?? group.First();
+
+                    foreach (var field in group)
+                    {
+                        if (ReferenceEquals(field, keep))
+                        {
+                            continue;
+                        }
+
+                        var baseName = IsLookupField(field)
+                            ? $"{field.ResolvedFieldName}Lookup"
+                            : Pascalize(field.FieldName);
+
+                        var uniqueName = GetUniqueName(baseName, usedNames);
+                        field.SetResolvedFieldNameOverride(uniqueName);
+                    }
+                }
+            }
+        }
+
+        private static IReadOnlyList<FacetField> GetUniqueResolvedFields(IEnumerable<FacetField> fields)
+        {
+            var result = new List<FacetField>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+
+            foreach (var field in fields)
+            {
+                if (seen.Add(field.ResolvedFieldName))
+                {
+                    result.Add(field);
+                }
+            }
+
+            return result;
+        }
+
+        private static bool IsLookupField(FacetField field)
+        {
+            return field.IsComponentLookup || field.IsBufferLookup || field.IsEntityStorageInfoLookup;
+        }
+
+        private static string GetUniqueName(string baseName, ISet<string> usedNames)
+        {
+            if (usedNames.Add(baseName))
+            {
+                return baseName;
+            }
+
+            var index = 2;
+            string candidate;
+
+            do
+            {
+                candidate = $"{baseName}{index}";
+                index++;
+            }
+            while (!usedNames.Add(candidate));
+
+            return candidate;
         }
 
         private static void AddTypeHandle(ClassBuilder typeBuilder, FacetData data)
@@ -826,11 +932,13 @@ namespace BovineLabs.FacetGenerator
             resolve.AddParameter("ArchetypeChunk", "chunk");
             resolve.WithSummary($"Resolves a chunk into {data.TypeName}.ResolvedChunk for job access.")
                 .WithParameterDoc("chunk", "Chunk being processed.");
+
+            var resolvedFields = GetUniqueResolvedFields(data.Fields);
             resolve.WithBody(body =>
             {
                 // Unity chunk accessors return default handles/arrays when a component is absent,
                 // so optional fields remain safe even if the query includes archetypes without them.
-                var assignments = data.Fields.Select(field =>
+                var assignments = resolvedFields.Select(field =>
                 {
                     var value = field.IsSingleton
                         ? $"this.{field.HandleName}"
@@ -1412,6 +1520,11 @@ namespace BovineLabs.FacetGenerator
         {
             get
             {
+                if (!string.IsNullOrEmpty(this.resolvedFieldNameOverride))
+                {
+                    return this.resolvedFieldNameOverride;
+                }
+
                 if (this.IsSingleton || this.IsFacet || this.IsEntityStorageInfo || this.IsEntityStorageInfoLookup || this.IsComponentLookup || this.IsBufferLookup)
                 {
                     return this.PascalFieldName;
@@ -1461,6 +1574,11 @@ namespace BovineLabs.FacetGenerator
         public void SetFacetSingletonDependencies(IReadOnlyList<FacetSingletonDependency> dependencies)
         {
             this.FacetSingletonDependencies = dependencies ?? Array.Empty<FacetSingletonDependency>();
+        }
+
+        public void SetResolvedFieldNameOverride(string resolvedFieldName)
+        {
+            this.resolvedFieldNameOverride = resolvedFieldName;
         }
 
         public string ResolvedFieldTypeName
@@ -1529,6 +1647,8 @@ namespace BovineLabs.FacetGenerator
         {
             return name.EndsWith("s", StringComparison.OrdinalIgnoreCase) ? name : $"{name}s";
         }
+
+        private string resolvedFieldNameOverride;
 
         private string PascalFieldName => $"{char.ToUpper(this.FieldName[0], System.Globalization.CultureInfo.InvariantCulture)}{this.FieldName.Substring(1)}";
     }

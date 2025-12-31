@@ -6,7 +6,6 @@ namespace BovineLabs.DynamicGenerator
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Threading;
     using CodeGenHelpers;
     using Microsoft.CodeAnalysis;
