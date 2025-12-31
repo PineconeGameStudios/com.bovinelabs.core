@@ -22,8 +22,8 @@ namespace BovineLabs.Core.Tests.Facet
         private DynamicBuffer<BufferB> bufferB;
         [FacetOptional] [ReadOnly] private DynamicBuffer<BufferC> bufferC;
         [FacetOptional] private DynamicBuffer<BufferD> bufferD;
-        [Singleton] private SingletonA singletonA;
-        [Singleton] private DynamicBuffer<SingletonB> singletonB;
+        [ReadOnly][Singleton] private SingletonA singletonA;
+        [ReadOnly][Singleton] private DynamicBuffer<SingletonB> singletonB;
         [Facet] private Facet2Test facet2;
         [FacetOptional] [Facet] private Facet3Test facet3;
 
@@ -39,7 +39,8 @@ namespace BovineLabs.Core.Tests.Facet
     public partial struct Facet3Test : IFacet
     {
         [Singleton]
-        public SingletonBuffer SingletonBuffer;
+        [ReadOnly]
+        public DynamicBuffer<SingletonBuffer> SingletonBuffer;
     }
 
     public struct SingletonComponent : IComponentData {}

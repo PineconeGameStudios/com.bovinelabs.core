@@ -190,7 +190,7 @@ namespace BovineLabs.FacetGenerator
             if (!hasErrors && fields.Count > 0)
             {
                 var singletonCache = new Dictionary<FacetTraversalKey, IReadOnlyList<FacetSingletonDependency>>();
-                singletonDependencies = CollectSingletonDependencies(typeSymbol, fields, facetAttribute, singletonAttribute, facetInterface, singletonCache);
+                singletonDependencies = CollectSingletonDependencies(typeSymbol, fields, facetAttribute, singletonAttribute, readOnlyAttribute, facetInterface, singletonCache);
             }
 
             var data = !hasErrors && fields.Count > 0 ? new FacetData(typeSymbol, fields, singletonDependencies) : null;
@@ -203,6 +203,7 @@ namespace BovineLabs.FacetGenerator
             IReadOnlyList<FacetField> fields,
             INamedTypeSymbol facetAttribute,
             INamedTypeSymbol singletonAttribute,
+            INamedTypeSymbol readOnlyAttribute,
             INamedTypeSymbol facetInterface,
             IDictionary<FacetTraversalKey, IReadOnlyList<FacetSingletonDependency>> singletonCache)
         {
@@ -227,6 +228,7 @@ namespace BovineLabs.FacetGenerator
                     facetType,
                     facetAttribute,
                     singletonAttribute,
+                    readOnlyAttribute,
                     facetInterface,
                     new[] { field.FieldName },
                     singletonCache,
@@ -243,6 +245,7 @@ namespace BovineLabs.FacetGenerator
             INamedTypeSymbol facetType,
             INamedTypeSymbol facetAttribute,
             INamedTypeSymbol singletonAttribute,
+            INamedTypeSymbol readOnlyAttribute,
             INamedTypeSymbol facetInterface,
             IReadOnlyList<string> path,
             IDictionary<FacetTraversalKey, IReadOnlyList<FacetSingletonDependency>> singletonCache,
@@ -273,7 +276,8 @@ namespace BovineLabs.FacetGenerator
 
                 if (HasAttribute(attributes, singletonAttribute))
                 {
-                    var singletonField = new FacetField(fieldSymbol, fieldSymbol.Type, FacetFieldKind.Singleton, false, true);
+                    var hasReadOnlyAttribute = HasAttribute(attributes, readOnlyAttribute);
+                    var singletonField = new FacetField(fieldSymbol, fieldSymbol.Type, FacetFieldKind.Singleton, false, true, hasReadOnlyAttribute);
                     var parameterName = CreateSingletonParameterName(path, singletonField.FieldName);
                     dependencies.Add(new FacetSingletonDependency(parameterName, singletonField));
                     continue;
@@ -292,6 +296,7 @@ namespace BovineLabs.FacetGenerator
                     nestedFacetType,
                     facetAttribute,
                     singletonAttribute,
+                    readOnlyAttribute,
                     facetInterface,
                     nestedPath,
                     singletonCache,
@@ -358,7 +363,13 @@ namespace BovineLabs.FacetGenerator
 
             if (hasSingletonAttribute)
             {
-                field = new FacetField(fieldSymbol, fieldSymbol.Type, FacetFieldKind.Singleton, false, true);
+                if (fieldSymbol.Type is INamedTypeSymbol { Name: "DynamicBuffer", TypeArguments: { Length: 1 } } && !hasReadOnlyAttribute)
+                {
+                    diagnostics?.Add(FacetDiagnostics.ReadOnlySingletonBuffer(fieldSymbol, fieldSymbol.Locations.FirstOrDefault()));
+                    return false;
+                }
+
+                field = new FacetField(fieldSymbol, fieldSymbol.Type, FacetFieldKind.Singleton, false, true, hasReadOnlyAttribute);
                 return true;
             }
 
@@ -368,7 +379,7 @@ namespace BovineLabs.FacetGenerator
                     fieldSymbol.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct } facetType &&
                     facetType.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, facetInterface)))
                 {
-                    field = new FacetField(fieldSymbol, facetType, FacetFieldKind.Facet, isOptional, hasReadOnlyAttribute);
+                    field = new FacetField(fieldSymbol, facetType, FacetFieldKind.Facet, isOptional, hasReadOnlyAttribute, hasReadOnlyAttribute);
                     return true;
                 }
 
@@ -378,19 +389,19 @@ namespace BovineLabs.FacetGenerator
 
             if (entityType != null && SymbolEqualityComparer.Default.Equals(fieldSymbol.Type, entityType))
             {
-                field = new FacetField(fieldSymbol, fieldSymbol.Type, FacetFieldKind.Entity, isOptional, true);
+                field = new FacetField(fieldSymbol, fieldSymbol.Type, FacetFieldKind.Entity, isOptional, true, hasReadOnlyAttribute);
                 return true;
             }
 
             if (entityStorageInfoType != null && SymbolEqualityComparer.Default.Equals(fieldSymbol.Type, entityStorageInfoType))
             {
-                field = new FacetField(fieldSymbol, fieldSymbol.Type, FacetFieldKind.EntityStorageInfo, isOptional, true);
+                field = new FacetField(fieldSymbol, fieldSymbol.Type, FacetFieldKind.EntityStorageInfo, isOptional, true, hasReadOnlyAttribute);
                 return true;
             }
 
             if (entityStorageInfoLookupType != null && SymbolEqualityComparer.Default.Equals(fieldSymbol.Type, entityStorageInfoLookupType))
             {
-                field = new FacetField(fieldSymbol, fieldSymbol.Type, FacetFieldKind.EntityStorageInfoLookup, isOptional, true);
+                field = new FacetField(fieldSymbol, fieldSymbol.Type, FacetFieldKind.EntityStorageInfoLookup, isOptional, true, hasReadOnlyAttribute);
                 return true;
             }
 
@@ -402,13 +413,13 @@ namespace BovineLabs.FacetGenerator
 
             if (componentLookupType != null && SymbolEqualityComparer.Default.Equals(namedType.OriginalDefinition, componentLookupType))
             {
-                field = new FacetField(fieldSymbol, namedType.TypeArguments[0], FacetFieldKind.ComponentLookup, isOptional, hasReadOnlyAttribute);
+                field = new FacetField(fieldSymbol, namedType.TypeArguments[0], FacetFieldKind.ComponentLookup, isOptional, hasReadOnlyAttribute, hasReadOnlyAttribute);
                 return true;
             }
 
             if (bufferLookupType != null && SymbolEqualityComparer.Default.Equals(namedType.OriginalDefinition, bufferLookupType))
             {
-                field = new FacetField(fieldSymbol, namedType.TypeArguments[0], FacetFieldKind.BufferLookup, isOptional, hasReadOnlyAttribute);
+                field = new FacetField(fieldSymbol, namedType.TypeArguments[0], FacetFieldKind.BufferLookup, isOptional, hasReadOnlyAttribute, hasReadOnlyAttribute);
                 return true;
             }
 
@@ -447,7 +458,7 @@ namespace BovineLabs.FacetGenerator
                 kind == FacetFieldKind.EnabledRefRO ||
                 hasReadOnlyAttribute && kind != FacetFieldKind.EnabledRefRW;
 
-            field = new FacetField(fieldSymbol, componentType, kind, isOptional, isReadOnly);
+            field = new FacetField(fieldSymbol, componentType, kind, isOptional, isReadOnly, hasReadOnlyAttribute);
             return true;
         }
 
@@ -488,7 +499,8 @@ namespace BovineLabs.FacetGenerator
             var builder = CodeBuilder
                 .Create(data.TypeSymbol.ContainingNamespace.ToDisplayString())
                 .AddNamespaceImport("Unity.Collections")
-                .AddNamespaceImport("Unity.Entities");
+                .AddNamespaceImport("Unity.Entities")
+                .AddNamespaceImport("BovineLabs.Core.Extensions");
 
             var namespaces = new HashSet<string>(StringComparer.Ordinal);
 
@@ -519,6 +531,7 @@ namespace BovineLabs.FacetGenerator
             AddLookup(typeBuilder, data);
             AddResolvedChunk(typeBuilder, data);
             AddTypeHandle(typeBuilder, data);
+            AddSingletonData(typeBuilder, data);
             AddCreateQueryBuilder(typeBuilder, data);
 
             return builder;
@@ -720,6 +733,30 @@ namespace BovineLabs.FacetGenerator
                     body.AppendLine($"this.{field.LookupFieldName} = {parameterName};");
                 }
             });
+
+            if (singletonDependencies.Count > 0)
+            {
+                var updateFromData = lookup.AddMethod("Update", Accessibility.Public).WithReturnType("void");
+                updateFromData.AddParameter("ref SystemState", "state");
+                updateFromData.AddParameter("SingletonData", "data");
+                updateFromData.WithSummary($"Refreshes lookups for {data.TypeName} and updates singleton caches.")
+                    .WithParameterDoc("state", "System state used to update handles.")
+                    .WithParameterDoc("data", $"Singleton queries used to resolve {data.TypeName} singletons.");
+
+                updateFromData.WithBody(body =>
+                {
+                    foreach (var dependency in singletonDependencies)
+                    {
+                        var expression = GetSingletonDataResolveExpression(dependency, "data");
+                        body.AppendLine($"var {dependency.ParameterName} = {expression};");
+                    }
+
+                    body.NewLine();
+
+                    var arguments = string.Join(", ", singletonDependencies.Select(dependency => $"in {dependency.ParameterName}"));
+                    body.AppendLine($"this.Update(ref state, {arguments});");
+                });
+            }
         }
 
         private static IReadOnlyList<LookupSlot> GetLookupSlots(IEnumerable<FacetField> fields)
@@ -945,6 +982,30 @@ namespace BovineLabs.FacetGenerator
                 }
             });
 
+            if (singletonDependencies.Count > 0)
+            {
+                var updateFromData = typeHandle.AddMethod("Update", Accessibility.Public).WithReturnType("void");
+                updateFromData.AddParameter("ref SystemState", "state");
+                updateFromData.AddParameter("SingletonData", "data");
+                updateFromData.WithSummary($"Updates type handles for {data.TypeName} and refreshes singleton caches.")
+                    .WithParameterDoc("state", "System state used to update handles.")
+                    .WithParameterDoc("data", $"Singleton queries used to resolve {data.TypeName} singletons.");
+
+                updateFromData.WithBody(body =>
+                {
+                    foreach (var dependency in singletonDependencies)
+                    {
+                        var expression = GetSingletonDataResolveExpression(dependency, "data");
+                        body.AppendLine($"var {dependency.ParameterName} = {expression};");
+                    }
+
+                    body.NewLine();
+
+                    var arguments = string.Join(", ", singletonDependencies.Select(dependency => $"in {dependency.ParameterName}"));
+                    body.AppendLine($"this.Update(ref state, {arguments});");
+                });
+            }
+
             var resolve = typeHandle.AddMethod("Resolve", Accessibility.Public).WithReturnType("ResolvedChunk");
             resolve.AddParameter("ArchetypeChunk", "chunk");
             resolve.WithSummary($"Resolves a chunk into {data.TypeName}.ResolvedChunk for job access.")
@@ -978,6 +1039,41 @@ namespace BovineLabs.FacetGenerator
                 using (body.BlockWithDelimiter("return new ResolvedChunk"))
                 {
                     body.AppendLines(assignments, assignment => assignment);
+                }
+            });
+        }
+
+        private static void AddSingletonData(ClassBuilder typeBuilder, FacetData data)
+        {
+            var singletonDependencies = data.SingletonDependencies;
+            if (singletonDependencies.Count == 0)
+            {
+                return;
+            }
+
+            var singletonData = typeBuilder.AddNestedClass("SingletonData", true, Accessibility.Public)
+                .IsStruct()
+                .WithSummary($"Provides singleton queries for {data.TypeName}.");
+
+            foreach (var dependency in singletonDependencies)
+            {
+                var queryFieldName = GetSingletonDataQueryFieldName(dependency);
+                singletonData.AddProperty(queryFieldName, Accessibility.Public)
+                    .SetType("EntityQuery");
+            }
+
+            var create = singletonData.AddMethod("Create", Accessibility.Public).WithReturnType("void");
+            create.AddParameter("ref SystemState", "state");
+            create.WithSummary($"Initializes singleton queries for {data.TypeName}.")
+                .WithParameterDoc("state", "System state used to build queries.");
+
+            create.WithBody(body =>
+            {
+                foreach (var dependency in singletonDependencies)
+                {
+                    var queryFieldName = GetSingletonDataQueryFieldName(dependency);
+                    var queryInvocation = GetSingletonQueryBuilderInvocation(dependency.Field);
+                    body.AppendLine($"this.{queryFieldName} = new EntityQueryBuilder(Allocator.Temp).{queryInvocation}.Build(ref state);");
                 }
             });
         }
@@ -1263,17 +1359,65 @@ namespace BovineLabs.FacetGenerator
             return field.ComponentTypeName.Replace("<", "&lt;").Replace(">", "&gt;");
         }
 
+        private static bool TryGetDynamicBufferElementType(ITypeSymbol typeSymbol, out ITypeSymbol elementType)
+        {
+            if (typeSymbol is INamedTypeSymbol { Name: "DynamicBuffer", TypeArguments: { Length: 1 } } namedType)
+            {
+                elementType = namedType.TypeArguments[0];
+                return true;
+            }
+
+            elementType = null;
+            return false;
+        }
+
         private static string GetSingletonRetrievalDoc(FacetField field)
         {
             var typeName = GetXmlSafeTypeName(field);
 
-            if (field.ComponentTypeSymbol is INamedTypeSymbol { Name: "DynamicBuffer", TypeArguments: { Length: 1 } } namedType)
+            if (TryGetDynamicBufferElementType(field.ComponentTypeSymbol, out var elementType))
             {
-                var elementTypeName = namedType.TypeArguments[0].ToDisplayString(ShortTypeFormat).Replace("<", "&lt;").Replace(">", "&gt;");
-                return $"Singleton value for {typeName} which is typically retrieved via SystemAPI.GetSingletonBuffer&lt;{elementTypeName}&gt;().";
+                var elementTypeName = elementType.ToDisplayString(ShortTypeFormat).Replace("<", "&lt;").Replace(">", "&gt;");
+                return $"Singleton value for {typeName} which is typically retrieved via SystemAPI.GetSingletonBuffer&lt;{elementTypeName}&gt;(true).";
             }
 
             return $"Singleton value for {typeName} which is typically retrieved via SystemAPI.GetSingleton&lt;{typeName}&gt;().";
+        }
+
+        private static string GetSingletonDataQueryFieldName(FacetSingletonDependency dependency)
+        {
+            return $"{Pascalize(dependency.ParameterName)}Query";
+        }
+
+        private static string GetSingletonQueryComponentTypeName(FacetField field)
+        {
+            if (TryGetDynamicBufferElementType(field.ComponentTypeSymbol, out var elementType))
+            {
+                return elementType.ToDisplayString(ShortTypeFormat);
+            }
+
+            return field.ComponentTypeName;
+        }
+
+        private static string GetSingletonQueryBuilderInvocation(FacetField field)
+        {
+            var componentTypeName = GetSingletonQueryComponentTypeName(field);
+            return field.HasReadOnlyAttribute
+                ? $"WithAll<{componentTypeName}>()"
+                : $"WithAllRW<{componentTypeName}>()";
+        }
+
+        private static string GetSingletonDataResolveExpression(FacetSingletonDependency dependency, string dataParameterName)
+        {
+            var queryFieldName = GetSingletonDataQueryFieldName(dependency);
+
+            if (TryGetDynamicBufferElementType(dependency.Field.ComponentTypeSymbol, out var elementType))
+            {
+                var elementTypeName = elementType.ToDisplayString(ShortTypeFormat);
+                return $"{dataParameterName}.{queryFieldName}.GetSingletonBufferNoSync<{elementTypeName}>(true)";
+            }
+
+            return $"{dataParameterName}.{queryFieldName}.GetSingleton<{dependency.Field.ComponentTypeName}>()";
         }
 
         private static string Pascalize(string value)
@@ -1475,13 +1619,14 @@ namespace BovineLabs.FacetGenerator
 
     internal sealed class FacetField
     {
-        public FacetField(IFieldSymbol symbol, ITypeSymbol componentType, FacetFieldKind kind, bool isOptional, bool isReadOnly)
+        public FacetField(IFieldSymbol symbol, ITypeSymbol componentType, FacetFieldKind kind, bool isOptional, bool isReadOnly, bool hasReadOnlyAttribute)
         {
             this.Symbol = symbol;
             this.ComponentTypeSymbol = componentType;
             this.Kind = kind;
             this.IsOptional = isOptional;
             this.IsReadOnly = isReadOnly;
+            this.HasReadOnlyAttribute = hasReadOnlyAttribute;
             this.FieldTypeName = symbol.Type.ToDisplayString(FacetGenerator.ShortTypeFormat);
             this.ComponentTypeName = componentType.ToDisplayString(FacetGenerator.ShortTypeFormat);
             this.ArgumentName = this.FieldName is "entity" or "facet" ? $"{this.FieldName}Value" : this.FieldName;
@@ -1496,6 +1641,8 @@ namespace BovineLabs.FacetGenerator
         public bool IsOptional { get; }
 
         public bool IsReadOnly { get; }
+
+        public bool HasReadOnlyAttribute { get; }
 
         public bool IsEntity => this.Kind == FacetFieldKind.Entity;
 

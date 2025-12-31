@@ -60,6 +60,14 @@ namespace BovineLabs.FacetGenerator
             DiagnosticSeverity.Error,
             true);
 
+        internal static readonly DiagnosticDescriptor ReadOnlySingletonBufferDescriptor = new DiagnosticDescriptor(
+            "BLFCT0007",
+            "DynamicBuffer singleton must be ReadOnly",
+            "Singleton DynamicBuffer field '{0}' must be marked with [ReadOnly]",
+            Category,
+            DiagnosticSeverity.Error,
+            true);
+
         public static Diagnostic MissingPartial(INamedTypeSymbol typeSymbol, Location location)
         {
             return Diagnostic.Create(MissingPartialDescriptor, location, typeSymbol.ToDisplayString(FacetGenerator.ShortTypeFormat));
@@ -103,6 +111,14 @@ namespace BovineLabs.FacetGenerator
                 location ?? fieldSymbol.Locations[0],
                 fieldSymbol.Name,
                 fieldSymbol.Type.ToDisplayString(FacetGenerator.ShortTypeFormat));
+        }
+
+        public static Diagnostic ReadOnlySingletonBuffer(IFieldSymbol fieldSymbol, Location location)
+        {
+            return Diagnostic.Create(
+                ReadOnlySingletonBufferDescriptor,
+                location ?? fieldSymbol.Locations[0],
+                fieldSymbol.Name);
         }
 
         private static string GetComponentName(IFieldSymbol fieldSymbol)
