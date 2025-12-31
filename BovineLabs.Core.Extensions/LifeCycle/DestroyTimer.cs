@@ -66,6 +66,7 @@ namespace BovineLabs.Core.LifeCycle
             public ComponentTypeHandle<T> RemainingHandle;
             public float DeltaTime;
 
+            /// <inheritdoc/>
             public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
             {
                 var remainings = (float*)chunk.GetRequiredComponentDataPtrRW(ref this.RemainingHandle);

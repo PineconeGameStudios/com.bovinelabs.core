@@ -18,6 +18,7 @@ namespace BovineLabs.Core.PhysicsStates
     {
         public NativeHashSet<TC> CurrentEvents;
 
+        /// <inheritdoc/>
         public void Execute()
         {
             this.CurrentEvents.RecalculateBuckets();

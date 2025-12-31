@@ -14,6 +14,7 @@ namespace BovineLabs.Core.PhysicsStates
     [UpdateBefore(typeof(StatefulTriggerEventSystem))]
     public partial struct StatefulTriggerEventClearSystem : ISystem
     {
+        /// <inheritdoc/>
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {

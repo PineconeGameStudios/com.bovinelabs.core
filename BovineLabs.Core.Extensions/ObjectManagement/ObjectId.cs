@@ -61,11 +61,13 @@ namespace BovineLabs.Core.ObjectManagement
             return left.ID != right.ID;
         }
 
+        /// <inheritdoc/>
         public int CompareTo(ObjectId other)
         {
             return this.rawValue.CompareTo(other.rawValue);
         }
 
+        /// <inheritdoc/>
         public override string ToString()
         {
             return $"ID:{this.ID}";

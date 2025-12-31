@@ -31,11 +31,13 @@ namespace BovineLabs.Core.Groups
     [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1402:File may only contain a single type", Justification = "Convenience")]
     internal partial class UpdateAfterGhostSimulationSystemGroup : SystemBase
     {
+        /// <inheritdoc/>
         protected override void OnCreate()
         {
             this.Enabled = false;
         }
 
+        /// <inheritdoc/>
         protected override void OnUpdate()
         {
         }
@@ -47,11 +49,13 @@ namespace BovineLabs.Core.Groups
     [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1402:File may only contain a single type", Justification = "Convenience")]
     internal partial class UpdateBeforePredictedSimulationSystemGroup : SystemBase
     {
+        /// <inheritdoc/>
         protected override void OnCreate()
         {
             this.Enabled = false;
         }
 
+        /// <inheritdoc/>
         protected override void OnUpdate()
         {
         }

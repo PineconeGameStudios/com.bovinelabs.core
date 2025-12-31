@@ -35,6 +35,7 @@ namespace BovineLabs.Core.SubScenes
 #endif
         }
 
+        /// <inheritdoc/>
         [BurstCompile]
         public void OnStartRunning(ref SystemState state)
         {
@@ -45,6 +46,7 @@ namespace BovineLabs.Core.SubScenes
             }
         }
 
+        /// <inheritdoc/>
         public void OnStopRunning(ref SystemState state)
         {
         }

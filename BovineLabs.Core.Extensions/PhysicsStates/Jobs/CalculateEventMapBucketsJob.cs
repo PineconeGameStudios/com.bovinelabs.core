@@ -17,6 +17,7 @@ namespace BovineLabs.Core.PhysicsStates
     {
         public NativeMultiHashMap<Entity, TC> CurrentEventMap;
 
+        /// <inheritdoc/>
         public void Execute()
         {
             this.CurrentEventMap.RecalculateBuckets();

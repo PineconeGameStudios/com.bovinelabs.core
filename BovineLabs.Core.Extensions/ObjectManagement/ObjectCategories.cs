@@ -22,6 +22,7 @@ namespace BovineLabs.Core.ObjectManagement
 
         public IReadOnlyCollection<ComponentMap> Components => this.keys;
 
+        /// <inheritdoc/>
         public override IEnumerable<NameValue<byte>> Keys => this.keys.Select(k => new NameValue<byte>(k.Name, k.Value));
 
         [Serializable]

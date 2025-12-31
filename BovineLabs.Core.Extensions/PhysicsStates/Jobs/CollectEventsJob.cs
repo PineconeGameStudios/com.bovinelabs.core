@@ -37,6 +37,7 @@ namespace BovineLabs.Core.PhysicsStates
 
         public int EventsPerRead;
 
+        /// <inheritdoc/>
         public void Execute(int startIndex, int count)
         {
             var end = startIndex + count;

@@ -19,6 +19,7 @@ namespace BovineLabs.Core
         [SerializeField]
         private CustomPhysicsMaterialTagNames tags;
 
+        /// <inheritdoc/>
         public override IEnumerable<NameValue<int>> Keys
         {
             get

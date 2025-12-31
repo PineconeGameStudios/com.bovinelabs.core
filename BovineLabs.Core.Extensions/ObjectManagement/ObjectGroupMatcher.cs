@@ -38,16 +38,19 @@ namespace BovineLabs.Core.ObjectManagement
             };
         }
 
+        /// <inheritdoc/>
         public bool Equals(ObjectGroupKey other)
         {
             return this.GroupId.Equals(other.GroupId) && this.ObjectId.Equals(other.ObjectId);
         }
 
+        /// <inheritdoc/>
         public bool Equals((GroupId GroupId, ObjectId ObjectId) other)
         {
             return this.GroupId.Equals(other.GroupId) && this.ObjectId.Equals(other.ObjectId);
         }
 
+        /// <inheritdoc/>
         public override int GetHashCode()
         {
             unchecked

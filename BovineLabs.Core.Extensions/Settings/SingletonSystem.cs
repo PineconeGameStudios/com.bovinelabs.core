@@ -37,6 +37,7 @@ namespace BovineLabs.Core.Settings
     {
         private NativeArray<Data> types;
 
+        /// <inheritdoc/>
         public void OnCreate(ref SystemState state)
         {
             var components = AllSingletonTypes.Components;
@@ -70,11 +71,13 @@ namespace BovineLabs.Core.Settings
             state.RequireAnyForUpdate(queries);
         }
 
+        /// <inheritdoc/>
         public void OnDestroy(ref SystemState state)
         {
             this.types.Dispose();
         }
 
+        /// <inheritdoc/>
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {

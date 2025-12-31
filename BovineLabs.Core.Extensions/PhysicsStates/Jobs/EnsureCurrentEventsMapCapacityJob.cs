@@ -22,6 +22,7 @@ namespace BovineLabs.Core.PhysicsStates
 
         public int EventsPerRead;
 
+        /// <inheritdoc/>
         public void Execute()
         {
             var capacity = this.Reader.Count() / this.EventsPerRead;

@@ -19,6 +19,7 @@ namespace BovineLabs.Core.LifeCycle
     [UpdateAfter(typeof(InstantiateCommandBufferSystem))]
     public partial class DestroySystemGroup : ComponentSystemGroup
     {
+        /// <inheritdoc/>
         protected override void OnUpdate()
         {
             var query = SystemAPI.QueryBuilder().WithAll<DestroyEntity>().Build();

@@ -23,18 +23,21 @@ namespace BovineLabs.Core.PhysicsStates
     {
         private StatefulEventImpl<StatefulCollisionEvent, StatefulCollisionEventContainer, CollectCollisionEvents, WriteEventsJob> impl;
 
+        /// <inheritdoc/>
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             this.impl.OnCreate(ref state, 2);
         }
 
+        /// <inheritdoc/>
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
             this.impl.OnDestroy();
         }
 
+        /// <inheritdoc/>
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
@@ -76,6 +79,7 @@ namespace BovineLabs.Core.PhysicsStates
                 this.inputVelocities = inputVelocities;
             }
 
+            /// <inheritdoc/>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public StatefulCollisionEventContainer Read(ref NativeStream.Reader reader)
             {

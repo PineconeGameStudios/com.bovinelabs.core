@@ -22,18 +22,21 @@ namespace BovineLabs.Core.PhysicsStates
     {
         private StatefulEventImpl<StatefulTriggerEvent, StatefulTriggerEventContainer, CollectTriggerEvents, WriteEventsJob> impl;
 
+        /// <inheritdoc/>
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             this.impl.OnCreate(ref state, 1);
         }
 
+        /// <inheritdoc/>
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
             this.impl.OnDestroy();
         }
 
+        /// <inheritdoc/>
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
@@ -58,6 +61,7 @@ namespace BovineLabs.Core.PhysicsStates
 
         internal struct CollectTriggerEvents : ICollectsEventsImpl<StatefulTriggerEvent, StatefulTriggerEventContainer>
         {
+            /// <inheritdoc/>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public StatefulTriggerEventContainer Read(ref NativeStream.Reader reader)
             {

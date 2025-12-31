@@ -25,6 +25,7 @@ namespace BovineLabs.Core.SubScenes
         private readonly List<ICreatePostLoadCommandBuffer> creators = new();
         private EntityQuery query;
 
+        /// <inheritdoc/>
         protected override void OnCreate()
         {
             this.query = SystemAPI.QueryBuilder().WithAll<SceneReference>().WithNone<PostLoadCommandBuffer>().Build();

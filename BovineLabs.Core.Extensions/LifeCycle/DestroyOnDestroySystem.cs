@@ -18,6 +18,7 @@ namespace BovineLabs.Core.LifeCycle
     [UpdateInGroup(typeof(DestroySystemGroup), OrderFirst = true)]
     public partial struct DestroyOnDestroySystem : ISystem
     {
+        /// <inheritdoc/>
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {

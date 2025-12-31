@@ -38,6 +38,7 @@ namespace BovineLabs.Core.ObjectManagement
             return this.Value.GetHashCode();
         }
 
+        /// <inheritdoc/>
         public int CompareTo(ObjectCategory other)
         {
             return this.Value.CompareTo(other.Value);

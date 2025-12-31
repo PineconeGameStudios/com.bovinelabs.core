@@ -17,6 +17,7 @@ namespace BovineLabs.Core.ObjectManagement
         private EntityQuery newQuery;
         private EntityQuery oldQuery;
 
+        /// <inheritdoc/>
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -34,11 +35,13 @@ namespace BovineLabs.Core.ObjectManagement
             state.RequireAnyForUpdate(anyQueries);
         }
 
+        /// <inheritdoc/>
         public void OnDestroy(ref SystemState state)
         {
             this.objectDefinitions.Dispose();
         }
 
+        /// <inheritdoc/>
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {

@@ -20,8 +20,10 @@ namespace BovineLabs.Core.PhysicsStates
             this.CollisionEvent = collisionEvent;
         }
 
+        /// <inheritdoc/>
         public Entity EntityA => this.CollisionEventData.Entities.EntityA;
 
+        /// <inheritdoc/>
         public Entity EntityB => this.CollisionEventData.Entities.EntityB;
 
         public StatefulCollisionEvent Create(Entity entity, StatefulEventState state)
@@ -56,6 +58,7 @@ namespace BovineLabs.Core.PhysicsStates
             };
         }
 
+        /// <inheritdoc/>
         public bool Equals(StatefulCollisionEventContainer other)
         {
             return this.CollisionEventData.Entities.EntityA.Equals(other.EntityA) &&
@@ -64,6 +67,7 @@ namespace BovineLabs.Core.PhysicsStates
                 this.CollisionEventData.ColliderKeys.ColliderKeyB.Equals(this.CollisionEventData.ColliderKeys.ColliderKeyB);
         }
 
+        /// <inheritdoc/>
         public override int GetHashCode()
         {
             unchecked

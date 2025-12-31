@@ -16,11 +16,13 @@ namespace BovineLabs.Core.SubScenes
             this.Value = value;
         }
 
+        /// <inheritdoc/>
         public bool Equals(SubSceneSetId other)
         {
             return this.Value == other.Value;
         }
 
+        /// <inheritdoc/>
         public override int GetHashCode()
         {
             return this.Value;
