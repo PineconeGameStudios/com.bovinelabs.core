@@ -212,7 +212,8 @@ namespace BovineLabs.FacetGenerator
             {
                 if (field.IsSingleton)
                 {
-                    dependencies.Add(new FacetSingletonDependency(field.FieldName, field));
+                    var parameterName = CreateSingletonParameterName(null, field.FieldName);
+                    dependencies.Add(new FacetSingletonDependency(parameterName, field));
                     continue;
                 }
 
@@ -308,7 +309,7 @@ namespace BovineLabs.FacetGenerator
         {
             if (path == null || path.Count == 0)
             {
-                return fieldName;
+                return Camelize(fieldName);
             }
 
             var name = path[0];
@@ -318,7 +319,7 @@ namespace BovineLabs.FacetGenerator
                 name += Pascalize(path[i]);
             }
 
-            return $"{name}{Pascalize(fieldName)}";
+            return Camelize($"{name}{Pascalize(fieldName)}");
         }
 
         private static string CreatePathKey(IReadOnlyList<string> path)
@@ -577,6 +578,9 @@ namespace BovineLabs.FacetGenerator
             var lookupSlots = GetLookupSlots(lookupFields);
             var singletonFields = data.Fields.Where(f => f.IsSingleton).ToArray();
             var singletonDependencies = data.SingletonDependencies;
+            var singletonParameterNames = singletonDependencies
+                .Where(dependency => dependency.Field.IsSingleton)
+                .ToDictionary(dependency => dependency.Field, dependency => dependency.ParameterName);
 
             foreach (var slot in lookupSlots)
             {
@@ -708,7 +712,12 @@ namespace BovineLabs.FacetGenerator
 
                 foreach (var field in singletonFields)
                 {
-                    body.AppendLine($"this.{field.LookupFieldName} = {field.FieldName};");
+                    if (!singletonParameterNames.TryGetValue(field, out var parameterName))
+                    {
+                        parameterName = field.FieldName;
+                    }
+
+                    body.AppendLine($"this.{field.LookupFieldName} = {parameterName};");
                 }
             });
         }
@@ -840,6 +849,9 @@ namespace BovineLabs.FacetGenerator
             var typeHandleFields = data.Fields.Where(f => !f.IsSingleton).ToArray();
             var singletonFields = data.Fields.Where(f => f.IsSingleton).ToArray();
             var singletonDependencies = data.SingletonDependencies;
+            var singletonParameterNames = singletonDependencies
+                .Where(dependency => dependency.Field.IsSingleton)
+                .ToDictionary(dependency => dependency.Field, dependency => dependency.ParameterName);
 
             foreach (var field in data.Fields)
             {
@@ -924,7 +936,12 @@ namespace BovineLabs.FacetGenerator
 
                 foreach (var field in singletonFields)
                 {
-                    body.AppendLine($"this.{field.HandleName} = {field.FieldName};");
+                    if (!singletonParameterNames.TryGetValue(field, out var parameterName))
+                    {
+                        parameterName = field.FieldName;
+                    }
+
+                    body.AppendLine($"this.{field.HandleName} = {parameterName};");
                 }
             });
 
@@ -1267,6 +1284,16 @@ namespace BovineLabs.FacetGenerator
             }
 
             return $"{char.ToUpper(value[0], System.Globalization.CultureInfo.InvariantCulture)}{value.Substring(1)}";
+        }
+
+        private static string Camelize(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return value;
+            }
+
+            return $"{char.ToLower(value[0], System.Globalization.CultureInfo.InvariantCulture)}{value.Substring(1)}";
         }
 
         private readonly struct FacetTraversalKey : IEquatable<FacetTraversalKey>
