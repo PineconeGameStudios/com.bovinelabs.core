@@ -30,8 +30,25 @@ namespace BovineLabs.FacetGenerator
     [Generator]
     public class FacetGenerator : IIncrementalGenerator
     {
-        internal static readonly SymbolDisplayFormat ShortTypeFormat =
-            SymbolDisplayFormat.MinimallyQualifiedFormat.WithMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
+        internal static readonly SymbolDisplayFormat ShortTypeFormat = CreateShortTypeFormat();
+
+        private static SymbolDisplayFormat CreateShortTypeFormat()
+        {
+            var format = SymbolDisplayFormat.MinimallyQualifiedFormat;
+
+            return new SymbolDisplayFormat(
+                format.GlobalNamespaceStyle,
+                SymbolDisplayTypeQualificationStyle.NameAndContainingTypes,
+                format.GenericsOptions,
+                format.MemberOptions,
+                format.DelegateStyle,
+                format.ExtensionMethodStyle,
+                format.ParameterOptions,
+                format.PropertyStyle,
+                format.LocalOptions,
+                format.KindOptions,
+                format.MiscellaneousOptions | SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
+        }
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
