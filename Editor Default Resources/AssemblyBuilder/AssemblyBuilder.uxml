@@ -40,6 +40,9 @@
                                tooltip="Add a assembly wide [DisableAutoCreation] attribute to the Test and PerformanceTest assemblies"
                                name="disableAutoCreation" value="true" />
                     <ui:Toggle label="Allow Unsafe Code" tooltip="Enable unsafe code within the generated assemblies" name="allowUnsafeCode" value="true" />
+                    <ui:Toggle label="Add Anchor"
+                               tooltip="Adds BovineLabs.Anchor and dependencies to the assembly" value="true"
+                               name="addAnchor" />
                 </ui:VisualElement>
             </ui:ScrollView>
         </ui:VisualElement>
