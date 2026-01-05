@@ -81,7 +81,7 @@ namespace BovineLabs.Core.Jobs
             var safety = NativeListUnsafeUtility.GetAtomicSafetyHandle(ref list);
             void* atomicSafetyHandlePtr = UnsafeUtility.AddressOf(ref safety);
 #else
-            void* atomicSafetyHandlePtr = null
+            void* atomicSafetyHandlePtr = null;
 #endif
 
 #if UNITY_6000_5_OR_NEWER
