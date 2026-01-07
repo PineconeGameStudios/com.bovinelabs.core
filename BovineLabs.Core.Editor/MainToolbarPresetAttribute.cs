@@ -2,7 +2,6 @@
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
-#if UNITY_6000_3_OR_NEWER
 namespace BovineLabs.Core.Editor
 {
     using System;
@@ -12,4 +11,3 @@ namespace BovineLabs.Core.Editor
     {
     }
 }
-#endif

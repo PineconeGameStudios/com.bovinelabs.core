@@ -59,11 +59,7 @@ namespace BovineLabs.Core.Editor.Utility
 
                 if (IsTwoColumnView())
                 {
-#if UNITY_6000_3_OR_NEWER
                     ShowFolderContentsMethod.Invoke(projectBrowser, new object[] { folderAsset.GetEntityId(), true });
-#else
-                    ShowFolderContentsMethod.Invoke(projectBrowser, new object[] { folderAsset.GetInstanceID(), true});
-#endif
                 }
             }
 

@@ -25,9 +25,7 @@ namespace BovineLabs.Core.Memory
 
         private AllocatorManager.AllocatorHandle handle;
 
-#if UNITY_6000_3_OR_NEWER
         private MemoryLabel memoryLabel;
-#endif
         private int allocationCount;
 
         /// <inheritdoc />
@@ -56,10 +54,8 @@ namespace BovineLabs.Core.Memory
         /// <param name="objectName">Object name associated with the label.</param>
         public void Initialize(string areaName, string objectName)
         {
-#if UNITY_6000_3_OR_NEWER
             var label = new MemoryLabel(areaName, objectName);
             this.memoryLabel = label;
-#endif
         }
 
         /// <inheritdoc />
@@ -78,9 +74,7 @@ namespace BovineLabs.Core.Memory
         /// <inheritdoc />
         public int Try(ref AllocatorManager.Block block)
         {
-#if UNITY_6000_3_OR_NEWER
             Check.Assume(this.memoryLabel.IsCreated);
-#endif
 
             if (block.Range.Pointer == IntPtr.Zero)
             {
@@ -137,11 +131,7 @@ namespace BovineLabs.Core.Memory
             }
 
             var alignment = EnsureAlignment(ref block);
-#if UNITY_6000_3_OR_NEWER
             var pointer = UnsafeUtility.MallocTracked(bytes, alignment, this.memoryLabel, 0);
-#else
-            var pointer = UnsafeUtility.MallocTracked(bytes, alignment, Allocator.Persistent, 0);
-#endif
 
             if (pointer == null)
             {
@@ -165,11 +155,8 @@ namespace BovineLabs.Core.Memory
             var pointer = (void*)block.Range.Pointer;
             if (pointer != null)
             {
-#if UNITY_6000_3_OR_NEWER
                 UnsafeUtility.FreeTracked(pointer, this.memoryLabel);
-#else
-                UnsafeUtility.FreeTracked(pointer, Allocator.Persistent);
-#endif
+
                 block.Range.Pointer = IntPtr.Zero;
                 block.AllocatedItems = 0;
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
@@ -196,11 +183,7 @@ namespace BovineLabs.Core.Memory
             }
 
             var alignment = EnsureAlignment(ref block);
-#if UNITY_6000_3_OR_NEWER
             var newPointer = UnsafeUtility.MallocTracked(bytes, alignment, this.memoryLabel, 0);
-#else
-            var newPointer = UnsafeUtility.MallocTracked(bytes, alignment, Allocator.Persistent, 0);
-#endif
 
             if (newPointer == null)
             {
@@ -217,11 +200,7 @@ namespace BovineLabs.Core.Memory
                     UnsafeUtility.MemCpy(newPointer, existingPointer, copyBytes);
                 }
 
-#if UNITY_6000_3_OR_NEWER
                 UnsafeUtility.FreeTracked(existingPointer, this.memoryLabel);
-#else
-                UnsafeUtility.FreeTracked(existingPointer, Allocator.Persistent);
-#endif
             }
 
             block.Range.Pointer = (IntPtr)newPointer;
