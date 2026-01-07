@@ -1402,9 +1402,8 @@ namespace BovineLabs.FacetGenerator
         private static string GetSingletonQueryBuilderInvocation(FacetField field)
         {
             var componentTypeName = GetSingletonQueryComponentTypeName(field);
-            return field.HasReadOnlyAttribute
-                ? $"WithAll<{componentTypeName}>()"
-                : $"WithAllRW<{componentTypeName}>()";
+            var with = field.HasReadOnlyAttribute ? $"WithAll<{componentTypeName}>()" : $"WithAllRW<{componentTypeName}>()";
+            return $"{with}.WithOptions(EntityQueryOptions.IncludeSystems)";
         }
 
         private static string GetSingletonDataResolveExpression(FacetSingletonDependency dependency, string dataParameterName)
