@@ -68,6 +68,21 @@ namespace BovineLabs.Core.Extensions
             return ref UnsafeUtility.ArrayElementAsRef<T>(buffer.GetUnsafeReadOnlyPtr(), index);
         }
 
+
+        /// <summary> Gets a readonly reference to the element at the given index. </summary>
+        /// <param name="buffer"> The dynamic buffer to get the element from. </param>
+        /// <param name="index"> The zero-based index. </param>
+        /// <typeparam name="T"> The buffer type. </typeparam>
+        /// <returns> Returns the reference to the element at the index. </returns>
+        public static T* PtrOfRO<T>(this in DynamicBuffer<T> buffer, int index)
+            where T : unmanaged
+        {
+            CheckReadAccess(buffer);
+            CheckBounds(buffer, index);
+
+            return (T*)buffer.GetUnsafeReadOnlyPtr() + index;
+        }
+
         /// <summary> Gets an <see langword="unsafe" /> read-only pointer to the contents of the buffer. </summary>
         /// <param name="buffer"> The dynamic buffer to get the element from. </param>
         /// <remarks> This function can only be called in unsafe code contexts. </remarks>

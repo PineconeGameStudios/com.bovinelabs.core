@@ -1,4 +1,4 @@
-﻿// <copyright file="FacetGenerator.cs" company="BovineLabs">
+// <copyright file="FacetGenerator.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
@@ -497,25 +497,20 @@ namespace BovineLabs.FacetGenerator
         private static CodeBuilder Generate(FacetData data)
         {
             var builder = CodeBuilder
-                .Create(data.TypeSymbol.ContainingNamespace.ToDisplayString())
-                .AddNamespaceImport("Unity.Collections")
-                .AddNamespaceImport("Unity.Entities")
-                .AddNamespaceImport("BovineLabs.Core.Extensions");
+                .Create(data.TypeSymbol.ContainingNamespace.ToDisplayString());
 
-            var namespaces = new HashSet<string>(StringComparer.Ordinal);
-
-            foreach (var field in data.Fields)
+            var namespaces = new HashSet<string>(StringComparer.Ordinal)
             {
-                if (field.ComponentTypeSymbol.ContainingNamespace.IsGlobalNamespace)
-                {
-                    continue;
-                }
+                "Unity.Collections",
+                "Unity.Entities",
+                "BovineLabs.Core.Extensions",
+            };
 
-                var namespaceName = field.ComponentTypeSymbol.ContainingNamespace.ToDisplayString();
-                if (namespaces.Add(namespaceName))
-                {
-                    builder.AddNamespaceImport(namespaceName);
-                }
+            AddReferencedNamespaces(data.TypeSymbol, namespaces);
+
+            foreach (var ns in namespaces)
+            {
+                builder.AddNamespaceImport(ns);
             }
 
             ResolveResolvedFieldNameConflicts(data.Fields);
@@ -535,6 +530,130 @@ namespace BovineLabs.FacetGenerator
             AddCreateQueryBuilder(typeBuilder, data);
 
             return builder;
+        }
+
+        private static void AddReferencedNamespaces(INamedTypeSymbol typeSymbol, ISet<string> namespaces)
+        {
+            AddDeclaredUsingNamespaces(typeSymbol, namespaces);
+
+            return; // I don't think we need referenced namespaces
+
+            var visited = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
+
+            foreach (var fieldSymbol in typeSymbol.GetMembers().OfType<IFieldSymbol>())
+            {
+                if (fieldSymbol.IsStatic || fieldSymbol.IsImplicitlyDeclared)
+                {
+                    continue;
+                }
+
+                AddTypeNamespaces(fieldSymbol.Type, namespaces, visited);
+            }
+        }
+
+        private static void AddDeclaredUsingNamespaces(INamedTypeSymbol typeSymbol, ISet<string> namespaces)
+        {
+            foreach (var syntaxRef in typeSymbol.DeclaringSyntaxReferences)
+            {
+                if (syntaxRef.GetSyntax() is not TypeDeclarationSyntax typeSyntax)
+                {
+                    continue;
+                }
+
+                var compilationUnit = typeSyntax.SyntaxTree.GetCompilationUnitRoot();
+                AddUsingDirectives(compilationUnit.Usings, namespaces);
+
+                foreach (var namespaceSyntax in typeSyntax.Ancestors().OfType<BaseNamespaceDeclarationSyntax>())
+                {
+                    AddUsingDirectives(namespaceSyntax.Usings, namespaces);
+                }
+            }
+        }
+
+        private static void AddUsingDirectives(SyntaxList<UsingDirectiveSyntax> directives, ISet<string> namespaces)
+        {
+            foreach (var directive in directives)
+            {
+                if (directive.Name == null)
+                {
+                    continue;
+                }
+
+                var name = directive.Name.ToString();
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    continue;
+                }
+
+                if (directive.Alias != null)
+                {
+                    var alias = directive.Alias.Name.ToString();
+                    if (!string.IsNullOrWhiteSpace(alias))
+                    {
+                        namespaces.Add($"{alias} = {name}");
+                    }
+
+                    continue;
+                }
+
+                if (directive.StaticKeyword != default)
+                {
+                    namespaces.Add($"static {name}");
+                    continue;
+                }
+
+                namespaces.Add(name);
+            }
+        }
+
+        private static void AddTypeNamespaces(ITypeSymbol typeSymbol, ISet<string> namespaces, ISet<ITypeSymbol> visited)
+        {
+            if (typeSymbol == null || !visited.Add(typeSymbol))
+            {
+                return;
+            }
+
+            if (typeSymbol is IArrayTypeSymbol arrayType)
+            {
+                AddTypeNamespaces(arrayType.ElementType, namespaces, visited);
+                return;
+            }
+
+            if (typeSymbol is IPointerTypeSymbol pointerType)
+            {
+                AddTypeNamespaces(pointerType.PointedAtType, namespaces, visited);
+                return;
+            }
+
+            if (typeSymbol is ITypeParameterSymbol typeParameterSymbol)
+            {
+                foreach (var constraintType in typeParameterSymbol.ConstraintTypes)
+                {
+                    AddTypeNamespaces(constraintType, namespaces, visited);
+                }
+
+                return;
+            }
+
+            if (typeSymbol is not INamedTypeSymbol namedType)
+            {
+                return;
+            }
+
+            if (!namedType.ContainingNamespace.IsGlobalNamespace)
+            {
+                namespaces.Add(namedType.ContainingNamespace.ToDisplayString());
+            }
+
+            if (namedType.ContainingType != null)
+            {
+                AddTypeNamespaces(namedType.ContainingType, namespaces, visited);
+            }
+
+            foreach (var typeArgument in namedType.TypeArguments)
+            {
+                AddTypeNamespaces(typeArgument, namespaces, visited);
+            }
         }
 
         private static void AddConstructor(ClassBuilder typeBuilder, FacetData data)
