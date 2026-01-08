@@ -1,4 +1,4 @@
-﻿// <copyright file="FacetDiagnostics.cs" company="BovineLabs">
+// <copyright file="FacetDiagnostics.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
@@ -68,7 +68,24 @@ namespace BovineLabs.FacetGenerator
             DiagnosticSeverity.Error,
             true);
 
+        internal static readonly DiagnosticDescriptor FacetCycleDescriptor = new DiagnosticDescriptor(
+            "BLFCT0008",
+            "Facet reference cycle detected",
+            "Field '{0}' creates a cyclic facet reference to '{1}'",
+            Category,
+            DiagnosticSeverity.Error,
+            true);
+
+        internal static readonly DiagnosticDescriptor SingletonAttributeConflictDescriptor = new DiagnosticDescriptor(
+            "BLFCT0009",
+            "Singleton attribute conflicts",
+            "Field '{0}' cannot be marked with [Singleton] and [Facet] or [FacetOptional]",
+            Category,
+            DiagnosticSeverity.Error,
+            true);
+
         public static Diagnostic MissingPartial(INamedTypeSymbol typeSymbol, Location location)
+
         {
             return Diagnostic.Create(MissingPartialDescriptor, location, typeSymbol.ToDisplayString(FacetGenerator.ShortTypeFormat));
         }
@@ -121,7 +138,25 @@ namespace BovineLabs.FacetGenerator
                 fieldSymbol.Name);
         }
 
+        public static Diagnostic SingletonAttributeConflict(IFieldSymbol fieldSymbol, Location location)
+        {
+            return Diagnostic.Create(
+                SingletonAttributeConflictDescriptor,
+                location ?? fieldSymbol.Locations[0],
+                fieldSymbol.Name);
+        }
+
+        public static Diagnostic FacetCycle(IFieldSymbol fieldSymbol, Location location, INamedTypeSymbol facetType)
+        {
+            return Diagnostic.Create(
+                FacetCycleDescriptor,
+                location ?? fieldSymbol.Locations[0],
+                fieldSymbol.Name,
+                facetType.ToDisplayString(FacetGenerator.ShortTypeFormat));
+        }
+
         private static string GetComponentName(IFieldSymbol fieldSymbol)
+
         {
             if (fieldSymbol.Type is INamedTypeSymbol named && named.TypeArguments.Length == 1)
             {

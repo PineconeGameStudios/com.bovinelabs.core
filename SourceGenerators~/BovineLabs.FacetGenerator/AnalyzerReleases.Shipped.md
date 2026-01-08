@@ -14,3 +14,6 @@ BLFCT0004 | BovineLabs.FacetGenerator | Error | FacetDiagnostics
 BLFCT0005 | BovineLabs.FacetGenerator | Error | FacetDiagnostics
 BLFCT0006 | BovineLabs.FacetGenerator | Error | FacetDiagnostics
 BLFCT0007 | BovineLabs.FacetGenerator | Error | FacetDiagnostics
+BLFCT0008 | BovineLabs.FacetGenerator | Error | FacetDiagnostics
+BLFCT0009 | BovineLabs.FacetGenerator | Error | FacetDiagnostics
+

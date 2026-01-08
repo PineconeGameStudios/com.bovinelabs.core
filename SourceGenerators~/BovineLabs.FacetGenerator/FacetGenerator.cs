@@ -184,16 +184,34 @@ namespace BovineLabs.FacetGenerator
                 diagnostics.Add(FacetDiagnostics.NoFields(typeSymbol, typeSyntax.Identifier.GetLocation()));
             }
 
+            ValidateFacetGraph(typeSymbol, facetAttribute, facetInterface, diagnostics);
+
             var hasErrors = diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error);
             IReadOnlyList<FacetSingletonDependency> singletonDependencies = Array.Empty<FacetSingletonDependency>();
+            IReadOnlyList<QueryBuilderInvocation> queryBuilderInvocations = Array.Empty<QueryBuilderInvocation>();
 
             if (!hasErrors && fields.Count > 0)
             {
                 var singletonCache = new Dictionary<FacetTraversalKey, IReadOnlyList<FacetSingletonDependency>>();
                 singletonDependencies = CollectSingletonDependencies(typeSymbol, fields, facetAttribute, singletonAttribute, readOnlyAttribute, facetInterface, singletonCache);
+                queryBuilderInvocations = CollectQueryBuilderInvocations(
+                    typeSymbol,
+                    fields,
+                    optionalAttribute,
+                    facetAttribute,
+                    readOnlyAttribute,
+                    singletonAttribute,
+                    entityType,
+                    entityStorageInfoType,
+                    entityStorageInfoLookupType,
+                    componentLookupType,
+                    bufferLookupType,
+                    facetInterface);
             }
 
-            var data = !hasErrors && fields.Count > 0 ? new FacetData(typeSymbol, fields, singletonDependencies) : null;
+            var data = !hasErrors && fields.Count > 0
+                ? new FacetData(typeSymbol, fields, singletonDependencies, queryBuilderInvocations)
+                : null;
 
             return new FacetResult(data, diagnostics);
         }
@@ -310,6 +328,163 @@ namespace BovineLabs.FacetGenerator
             return dependencies;
         }
 
+        private static void ValidateFacetGraph(
+            INamedTypeSymbol typeSymbol,
+            INamedTypeSymbol facetAttribute,
+            INamedTypeSymbol facetInterface,
+            IList<Diagnostic> diagnostics)
+        {
+            if (facetAttribute == null || facetInterface == null)
+            {
+                return;
+            }
+
+            var visited = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+            var recursionStack = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+
+            void Walk(INamedTypeSymbol current)
+            {
+                if (!recursionStack.Add(current))
+                {
+                    return;
+                }
+
+                foreach (var fieldSymbol in current.GetMembers().OfType<IFieldSymbol>())
+                {
+                    if (fieldSymbol.IsStatic)
+                    {
+                        continue;
+                    }
+
+                    var attributes = fieldSymbol.GetAttributes();
+                    if (!HasAttribute(attributes, facetAttribute))
+                    {
+                        continue;
+                    }
+
+                    if (fieldSymbol.Type is not INamedTypeSymbol nestedFacetType || nestedFacetType.TypeKind != TypeKind.Struct)
+                    {
+                        continue;
+                    }
+
+                    if (!nestedFacetType.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, facetInterface)))
+                    {
+                        continue;
+                    }
+
+                    if (recursionStack.Contains(nestedFacetType))
+                    {
+                        diagnostics.Add(FacetDiagnostics.FacetCycle(fieldSymbol, fieldSymbol.Locations.FirstOrDefault(), nestedFacetType));
+                        continue;
+                    }
+
+                    if (!visited.Contains(nestedFacetType))
+                    {
+                        Walk(nestedFacetType);
+                    }
+                }
+
+                recursionStack.Remove(current);
+                visited.Add(current);
+            }
+
+            Walk(typeSymbol);
+        }
+
+        private static IReadOnlyList<QueryBuilderInvocation> CollectQueryBuilderInvocations(
+            INamedTypeSymbol typeSymbol,
+            IReadOnlyList<FacetField> fields,
+            INamedTypeSymbol optionalAttribute,
+            INamedTypeSymbol facetAttribute,
+            INamedTypeSymbol readOnlyAttribute,
+            INamedTypeSymbol singletonAttribute,
+            INamedTypeSymbol entityType,
+            INamedTypeSymbol entityStorageInfoType,
+            INamedTypeSymbol entityStorageInfoLookupType,
+            INamedTypeSymbol componentLookupType,
+            INamedTypeSymbol bufferLookupType,
+            INamedTypeSymbol facetInterface)
+        {
+            var invocations = new List<QueryBuilderInvocation>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            var visitedFacets = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default) { typeSymbol };
+
+            foreach (var field in fields)
+            {
+                AddField(field);
+            }
+
+            return invocations;
+
+            void AddInvocation(FacetField field)
+            {
+                var invocation = GetQueryBuilderInvocation(field);
+                if (seen.Add(invocation))
+                {
+                    invocations.Add(new QueryBuilderInvocation(invocation, field.ComponentTypeSymbol));
+                }
+            }
+
+            void AddField(FacetField field)
+            {
+                if (field.IsFacet)
+                {
+                    if (field.IsOptional)
+                    {
+                        return;
+                    }
+
+                    if (field.ComponentTypeSymbol is INamedTypeSymbol nestedFacetType)
+                    {
+                        AddFacetType(nestedFacetType);
+                    }
+
+                    return;
+                }
+
+                if (ShouldAddQueryBuilderInvocation(field))
+                {
+                    AddInvocation(field);
+                }
+            }
+
+            void AddFacetType(INamedTypeSymbol facetType)
+            {
+                if (!visitedFacets.Add(facetType))
+                {
+                    return;
+                }
+
+                foreach (var fieldSymbol in facetType.GetMembers().OfType<IFieldSymbol>())
+                {
+                    if (fieldSymbol.IsStatic)
+                    {
+                        continue;
+                    }
+
+                    if (!TryCreateFacetField(
+                        fieldSymbol,
+                        optionalAttribute,
+                        facetAttribute,
+                        readOnlyAttribute,
+                        singletonAttribute,
+                        entityType,
+                        entityStorageInfoType,
+                        entityStorageInfoLookupType,
+                        componentLookupType,
+                        bufferLookupType,
+                        facetInterface,
+                        null,
+                        out var nestedField))
+                    {
+                        continue;
+                    }
+
+                    AddField(nestedField);
+                }
+            }
+        }
+
         private static string CreateSingletonParameterName(IReadOnlyList<string> path, string fieldName)
         {
             if (path == null || path.Count == 0)
@@ -357,9 +532,18 @@ namespace BovineLabs.FacetGenerator
             var attributes = fieldSymbol.GetAttributes();
 
             var hasSingletonAttribute = HasAttribute(attributes, singletonAttribute);
-            var hasFacetAttribute = !hasSingletonAttribute && HasAttribute(attributes, facetAttribute);
-            var isOptional = !hasSingletonAttribute && HasAttribute(attributes, optionalAttribute);
+            var hasFacetAttribute = HasAttribute(attributes, facetAttribute);
+            var hasOptionalAttribute = HasAttribute(attributes, optionalAttribute);
             var hasReadOnlyAttribute = HasAttribute(attributes, readOnlyAttribute);
+
+            if (hasSingletonAttribute && (hasFacetAttribute || hasOptionalAttribute))
+            {
+                diagnostics?.Add(FacetDiagnostics.SingletonAttributeConflict(fieldSymbol, fieldSymbol.Locations.FirstOrDefault()));
+                return false;
+            }
+
+            var isOptional = !hasSingletonAttribute && hasOptionalAttribute;
+            var isFacetField = !hasSingletonAttribute && hasFacetAttribute;
 
             if (hasSingletonAttribute)
             {
@@ -373,7 +557,7 @@ namespace BovineLabs.FacetGenerator
                 return true;
             }
 
-            if (hasFacetAttribute)
+            if (isFacetField)
             {
                 if (facetInterface != null &&
                     fieldSymbol.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct } facetType &&
@@ -506,7 +690,8 @@ namespace BovineLabs.FacetGenerator
                 "BovineLabs.Core.Extensions",
             };
 
-            AddReferencedNamespaces(data.TypeSymbol, namespaces);
+            AddDeclaredUsingNamespaces(data.TypeSymbol, namespaces);
+            AddRequiredTypeNamespaces(data, namespaces);
 
             foreach (var ns in namespaces)
             {
@@ -532,25 +717,6 @@ namespace BovineLabs.FacetGenerator
             return builder;
         }
 
-        private static void AddReferencedNamespaces(INamedTypeSymbol typeSymbol, ISet<string> namespaces)
-        {
-            AddDeclaredUsingNamespaces(typeSymbol, namespaces);
-
-            return; // I don't think we need referenced namespaces
-
-            var visited = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
-
-            foreach (var fieldSymbol in typeSymbol.GetMembers().OfType<IFieldSymbol>())
-            {
-                if (fieldSymbol.IsStatic || fieldSymbol.IsImplicitlyDeclared)
-                {
-                    continue;
-                }
-
-                AddTypeNamespaces(fieldSymbol.Type, namespaces, visited);
-            }
-        }
-
         private static void AddDeclaredUsingNamespaces(INamedTypeSymbol typeSymbol, ISet<string> namespaces)
         {
             foreach (var syntaxRef in typeSymbol.DeclaringSyntaxReferences)
@@ -570,15 +736,54 @@ namespace BovineLabs.FacetGenerator
             }
         }
 
+        private static void AddRequiredTypeNamespaces(FacetData data, ISet<string> namespaces)
+        {
+            foreach (var field in data.Fields)
+            {
+                AddTypeNamespaces(field.ComponentTypeSymbol, namespaces);
+                AddTypeNamespaces(field.Symbol.Type, namespaces);
+            }
+
+            foreach (var invocation in data.QueryBuilderInvocations)
+            {
+                AddTypeNamespaces(invocation.ComponentTypeSymbol, namespaces);
+            }
+        }
+
+        private static void AddTypeNamespaces(ITypeSymbol typeSymbol, ISet<string> namespaces)
+        {
+            if (typeSymbol == null)
+            {
+                return;
+            }
+
+            switch (typeSymbol)
+            {
+                case INamedTypeSymbol namedType:
+                    if (!namedType.ContainingNamespace.IsGlobalNamespace)
+                    {
+                        namespaces.Add(namedType.ContainingNamespace.ToDisplayString());
+                    }
+
+                    foreach (var typeArgument in namedType.TypeArguments)
+                    {
+                        AddTypeNamespaces(typeArgument, namespaces);
+                    }
+
+                    break;
+                case IArrayTypeSymbol arrayType:
+                    AddTypeNamespaces(arrayType.ElementType, namespaces);
+                    break;
+                case IPointerTypeSymbol pointerType:
+                    AddTypeNamespaces(pointerType.PointedAtType, namespaces);
+                    break;
+            }
+        }
+
         private static void AddUsingDirectives(SyntaxList<UsingDirectiveSyntax> directives, ISet<string> namespaces)
         {
             foreach (var directive in directives)
             {
-                if (directive.Name == null)
-                {
-                    continue;
-                }
-
                 var name = directive.Name.ToString();
                 if (string.IsNullOrWhiteSpace(name))
                 {
@@ -606,56 +811,6 @@ namespace BovineLabs.FacetGenerator
             }
         }
 
-        private static void AddTypeNamespaces(ITypeSymbol typeSymbol, ISet<string> namespaces, ISet<ITypeSymbol> visited)
-        {
-            if (typeSymbol == null || !visited.Add(typeSymbol))
-            {
-                return;
-            }
-
-            if (typeSymbol is IArrayTypeSymbol arrayType)
-            {
-                AddTypeNamespaces(arrayType.ElementType, namespaces, visited);
-                return;
-            }
-
-            if (typeSymbol is IPointerTypeSymbol pointerType)
-            {
-                AddTypeNamespaces(pointerType.PointedAtType, namespaces, visited);
-                return;
-            }
-
-            if (typeSymbol is ITypeParameterSymbol typeParameterSymbol)
-            {
-                foreach (var constraintType in typeParameterSymbol.ConstraintTypes)
-                {
-                    AddTypeNamespaces(constraintType, namespaces, visited);
-                }
-
-                return;
-            }
-
-            if (typeSymbol is not INamedTypeSymbol namedType)
-            {
-                return;
-            }
-
-            if (!namedType.ContainingNamespace.IsGlobalNamespace)
-            {
-                namespaces.Add(namedType.ContainingNamespace.ToDisplayString());
-            }
-
-            if (namedType.ContainingType != null)
-            {
-                AddTypeNamespaces(namedType.ContainingType, namespaces, visited);
-            }
-
-            foreach (var typeArgument in namedType.TypeArguments)
-            {
-                AddTypeNamespaces(typeArgument, namespaces, visited);
-            }
-        }
-
         private static void AddConstructor(ClassBuilder typeBuilder, FacetData data)
         {
             var ctor = typeBuilder.AddConstructor(Accessibility.Public)
@@ -676,10 +831,7 @@ namespace BovineLabs.FacetGenerator
 
         private static void AddCreateQueryBuilder(ClassBuilder typeBuilder, FacetData data)
         {
-            var queries = data.Fields
-                .Where(f => !f.IsOptional && !f.IsSingleton && !f.IsFacet && !f.IsEntity && !f.IsEntityStorageInfo && !f.IsEntityStorageInfoLookup && !f.IsComponentLookup && !f.IsBufferLookup)
-                .Select(GetQueryBuilderInvocation)
-                .ToArray();
+            var queries = data.QueryBuilderInvocations;
 
             var method = typeBuilder
                 .AddMethod("CreateQueryBuilder", Accessibility.Public)
@@ -692,12 +844,24 @@ namespace BovineLabs.FacetGenerator
 
             method.WithBody(body =>
             {
-                var chain = queries.Length == 0
+                var chain = queries.Count == 0
                     ? string.Empty
-                    : string.Concat(queries.Select(q => $".{q}"));
+                    : string.Concat(queries.Select(q => $".{q.Invocation}"));
 
                 body.AppendLine($"return new EntityQueryBuilder(allocator){chain};");
             });
+        }
+
+        private static bool ShouldAddQueryBuilderInvocation(FacetField field)
+        {
+            return !field.IsOptional &&
+                   !field.IsSingleton &&
+                   !field.IsFacet &&
+                   !field.IsEntity &&
+                   !field.IsEntityStorageInfo &&
+                   !field.IsEntityStorageInfoLookup &&
+                   !field.IsComponentLookup &&
+                   !field.IsBufferLookup;
         }
 
         private static void AddLookup(ClassBuilder typeBuilder, FacetData data)
@@ -1466,7 +1630,7 @@ namespace BovineLabs.FacetGenerator
                 FacetFieldKind.RefRW => $"WithAllRW<{field.ComponentTypeName}>()",
                 FacetFieldKind.RefRO => $"WithAll<{field.ComponentTypeName}>()",
                 FacetFieldKind.EnabledRefRW => $"WithAllRW<{field.ComponentTypeName}>()",
-                FacetFieldKind.EnabledRefRO => $"WithAllRW<{field.ComponentTypeName}>()",
+                FacetFieldKind.EnabledRefRO => $"WithAll<{field.ComponentTypeName}>()",
                 FacetFieldKind.DynamicBuffer when field.IsReadOnly => $"WithAll<{field.ComponentTypeName}>()",
                 FacetFieldKind.DynamicBuffer => $"WithAllRW<{field.ComponentTypeName}>()",
                 _ => throw new ArgumentOutOfRangeException(nameof(field.Kind), field.Kind, null),
@@ -1521,6 +1685,7 @@ namespace BovineLabs.FacetGenerator
         private static string GetSingletonQueryBuilderInvocation(FacetField field)
         {
             var componentTypeName = GetSingletonQueryComponentTypeName(field);
+            // RW dependency without RW access: allows safe writes to native containers stored on the singleton.
             var with = field.HasReadOnlyAttribute ? $"WithAll<{componentTypeName}>()" : $"WithAllRW<{componentTypeName}>()";
             return $"{with}.WithOptions(EntityQueryOptions.IncludeSystems)";
         }
@@ -1703,11 +1868,16 @@ namespace BovineLabs.FacetGenerator
 
     internal sealed class FacetData
     {
-        public FacetData(INamedTypeSymbol typeSymbol, IReadOnlyList<FacetField> fields, IReadOnlyList<FacetSingletonDependency> singletonDependencies)
+        public FacetData(
+            INamedTypeSymbol typeSymbol,
+            IReadOnlyList<FacetField> fields,
+            IReadOnlyList<FacetSingletonDependency> singletonDependencies,
+            IReadOnlyList<QueryBuilderInvocation> queryBuilderInvocations)
         {
             this.TypeSymbol = typeSymbol;
             this.Fields = fields;
             this.SingletonDependencies = singletonDependencies;
+            this.QueryBuilderInvocations = queryBuilderInvocations;
             this.typeName = typeSymbol.ToDisplayString(FacetGenerator.ShortTypeFormat);
         }
 
@@ -1717,9 +1887,24 @@ namespace BovineLabs.FacetGenerator
 
         public IReadOnlyList<FacetSingletonDependency> SingletonDependencies { get; }
 
+        public IReadOnlyList<QueryBuilderInvocation> QueryBuilderInvocations { get; }
+
         public string TypeName => this.typeName;
 
         private readonly string typeName;
+    }
+
+    internal sealed class QueryBuilderInvocation
+    {
+        public QueryBuilderInvocation(string invocation, ITypeSymbol componentTypeSymbol)
+        {
+            this.Invocation = invocation;
+            this.ComponentTypeSymbol = componentTypeSymbol;
+        }
+
+        public string Invocation { get; }
+
+        public ITypeSymbol ComponentTypeSymbol { get; }
     }
 
     internal sealed class FacetSingletonDependency
