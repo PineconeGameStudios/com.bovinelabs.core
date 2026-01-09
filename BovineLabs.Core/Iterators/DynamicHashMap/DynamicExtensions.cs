@@ -1,4 +1,4 @@
-﻿// <copyright file="DynamicExtensions.cs" company="BovineLabs">
+// <copyright file="DynamicExtensions.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
@@ -129,6 +129,20 @@ namespace BovineLabs.Core.Iterators
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DynamicBuffer<TBuffer> InitializeUntypedBuffer<TBuffer>(
+            this DynamicBuffer<TBuffer> buffer, int capacity = 0, int minGrowth = DefaultMinGrowth)
+            where TBuffer : unmanaged, IDynamicUntypedBuffer
+        {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            Assert.AreEqual(1, UnsafeUtility.SizeOf<TBuffer>());
+#endif
+
+            var bytes = buffer.Reinterpret<byte>();
+            DynamicUntypedBufferHelper.Init(bytes, capacity, capacity, minGrowth);
+            return buffer;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DynamicBuffer<TBuffer> InitializeVariableMap<TBuffer, TKey, TValue, T, TC>(
             this DynamicBuffer<TBuffer> buffer, int capacity = 0, int minGrowth = DefaultMinGrowth)
             where TBuffer : unmanaged, IDynamicVariableMap<TKey, TValue, T, TC>
@@ -225,6 +239,16 @@ namespace BovineLabs.Core.Iterators
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DynamicUntypedBuffer AsUntypedBuffer<TBuffer>(this DynamicBuffer<TBuffer> buffer)
+            where TBuffer : unmanaged, IDynamicUntypedBuffer
+        {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            Assert.AreEqual(1, sizeof(TBuffer));
+#endif
+            return new DynamicUntypedBuffer(buffer.Reinterpret<byte>());
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DynamicVariableMap<TKey, TValue, T, TC> AsVariableMap<TBuffer, TKey, TValue, T, TC>(this DynamicBuffer<TBuffer> buffer)
             where TBuffer : unmanaged, IDynamicVariableMap<TKey, TValue, T, TC>
             where TKey : unmanaged, IEquatable<TKey>
@@ -268,6 +292,13 @@ namespace BovineLabs.Core.Iterators
         {
             CheckSize<DynamicUntypedHashMapHelper<TKey>>(buffer);
             return (DynamicUntypedHashMapHelper<TKey>*)buffer.GetPtr();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static DynamicUntypedBufferHelper* AsUntypedBufferHelper(this DynamicBuffer<byte> buffer)
+        {
+            CheckSize<DynamicUntypedBufferHelper>(buffer);
+            return (DynamicUntypedBufferHelper*)buffer.GetPtr();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
