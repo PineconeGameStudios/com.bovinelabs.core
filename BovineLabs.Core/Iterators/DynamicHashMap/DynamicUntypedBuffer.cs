@@ -140,7 +140,7 @@ namespace BovineLabs.Core.Iterators
         {
             this.buffer.CheckWriteAccess();
             this.RefCheck();
-            DynamicUntypedBufferHelper.RemoveAt(this.buffer, ref this.helper, index);
+            DynamicUntypedBufferHelper.RemoveAt(ref this.helper, index);
         }
 
         [Conditional("ENABLE_UNITY_COLLECTIONS_CHECKS")]
