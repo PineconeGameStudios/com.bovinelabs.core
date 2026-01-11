@@ -10,7 +10,6 @@ namespace BovineLabs.Core.Iterators
     using System.Runtime.InteropServices;
     using BovineLabs.Core.Assertions;
     using Unity.Assertions;
-    using Unity.Burst;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Entities;
@@ -24,7 +23,7 @@ namespace BovineLabs.Core.Iterators
         internal int KeysOffset;
         internal int NextOffset;
         internal int BucketsOffset;
-        internal int TypeOffset;
+        internal int SizesOffset;
         internal int DataOffset;
         internal int Count;
         internal int Capacity;
@@ -90,13 +89,13 @@ namespace BovineLabs.Core.Iterators
             }
         }
 
-        internal int* Types
+        internal ushort* Sizes
         {
             get
             {
                 fixed (DynamicUntypedHashMapHelper<TKey>* data = &this)
                 {
-                    return (int*)((byte*)data + data->TypeOffset);
+                    return (ushort*)((byte*)data + data->SizesOffset);
                 }
             }
         }
@@ -117,7 +116,7 @@ namespace BovineLabs.Core.Iterators
 
             var bucketCapacity = GetBucketSize(capacity);
             var totalSize = CalculateDataSize(capacity, bucketCapacity, dataCapacity, out var keyOffset, out var nextOffset, out var bucketOffset,
-                out var typeOffset, out var dataOffset);
+                out var sizesOffset, out var dataOffset);
 
             var hashMapDataSize = sizeof(DynamicUntypedHashMapHelper<TKey>);
             buffer.ResizeUninitialized(hashMapDataSize + totalSize);
@@ -135,7 +134,7 @@ namespace BovineLabs.Core.Iterators
             data->KeysOffset = hashMapDataSize + keyOffset;
             data->NextOffset = hashMapDataSize + nextOffset;
             data->BucketsOffset = hashMapDataSize + bucketOffset;
-            data->TypeOffset = hashMapDataSize + typeOffset;
+            data->SizesOffset = hashMapDataSize + sizesOffset;
             data->DataOffset = hashMapDataSize + dataOffset;
 
             UnsafeUtility.MemSet(data->Buckets, 0xff, data->BucketCapacity * sizeof(int));
@@ -160,20 +159,20 @@ namespace BovineLabs.Core.Iterators
             Assert.IsTrue(newCapacity > data->Capacity);
 
             var totalSize = CalculateDataSize(newCapacity, newBucketCapacity, data->DataCapacity, out var keyOffset, out var nextOffset, out var bucketOffset,
-                out var typeOffset, out var dataOffset);
+                out var sizesOffset, out var dataOffset);
 
             var oldValue = (byte*)UnsafeUtility.Malloc(data->Capacity * sizeof(int), UnsafeUtility.AlignOf<byte>(), Allocator.Temp);
             var oldKeys = (TKey*)UnsafeUtility.Malloc(data->Capacity * sizeof(TKey), UnsafeUtility.AlignOf<TKey>(), Allocator.Temp);
             var oldNext = (int*)UnsafeUtility.Malloc(data->Capacity * sizeof(int), UnsafeUtility.AlignOf<int>(), Allocator.Temp);
             var oldBuckets = (int*)UnsafeUtility.Malloc(data->BucketCapacity * sizeof(int), UnsafeUtility.AlignOf<int>(), Allocator.Temp);
-            var oldTypes = (int*)UnsafeUtility.Malloc(data->Capacity * sizeof(int), UnsafeUtility.AlignOf<int>(), Allocator.Temp);
+            var oldSizes = (ushort*)UnsafeUtility.Malloc(data->Capacity * sizeof(ushort), UnsafeUtility.AlignOf<ushort>(), Allocator.Temp);
             var oldData = (int*)UnsafeUtility.Malloc(data->DataCapacity * sizeof(int), UnsafeUtility.AlignOf<int>(), Allocator.Temp);
 
             UnsafeUtility.MemCpy(oldValue, data->Values, data->Capacity * sizeof(int));
             UnsafeUtility.MemCpy(oldKeys, data->Keys, data->Capacity * sizeof(TKey));
             UnsafeUtility.MemCpy(oldNext, data->Next, data->Capacity * sizeof(int));
             UnsafeUtility.MemCpy(oldBuckets, data->Buckets, data->BucketCapacity * sizeof(int));
-            UnsafeUtility.MemCpy(oldTypes, data->Types, data->Capacity * sizeof(int));
+            UnsafeUtility.MemCpy(oldSizes, data->Sizes, data->Capacity * sizeof(ushort));
             UnsafeUtility.MemCpy(oldData, data->Data, data->DataCapacity * sizeof(int));
 
             var oldCapacity = data->Capacity;
@@ -197,7 +196,7 @@ namespace BovineLabs.Core.Iterators
             data->KeysOffset = hashMapDataSize + keyOffset;
             data->NextOffset = hashMapDataSize + nextOffset;
             data->BucketsOffset = hashMapDataSize + bucketOffset;
-            data->TypeOffset = hashMapDataSize + typeOffset;
+            data->SizesOffset = hashMapDataSize + sizesOffset;
             data->DataOffset = hashMapDataSize + dataOffset;
 
             data->Count = oldCount;
@@ -207,7 +206,7 @@ namespace BovineLabs.Core.Iterators
             UnsafeUtility.MemCpy(data->Keys, oldKeys, oldCapacity * sizeof(TKey));
 
             UnsafeUtility.MemCpy(data->Data, oldData, oldDataCapacity * sizeof(int));
-            UnsafeUtility.MemCpy(data->Types, oldTypes, oldCapacity * sizeof(int));
+            UnsafeUtility.MemCpy(data->Sizes, oldSizes, oldCapacity * sizeof(ushort));
 
             UnsafeUtility.MemCpy(data->Next, oldNext, oldCapacity * sizeof(int));
             UnsafeUtility.MemSet(data->Next + oldCapacity, 0xff, (newCapacity - oldCapacity) * sizeof(int));
@@ -271,7 +270,10 @@ namespace BovineLabs.Core.Iterators
                 data->CheckIndexOutOfBounds(idx);
 
                 UnsafeUtility.WriteArrayElement(data->Keys, idx, key);
-                UnsafeUtility.WriteArrayElement(data->Types, idx, BurstRuntime.GetHashCode32<TValue>());
+
+                var size = UnsafeUtility.SizeOf<TValue>();
+                Check.Assume(size <= ushort.MaxValue, "Size exceeds max allowed size of ushort.MaxValue");
+                UnsafeUtility.WriteArrayElement(data->Sizes, idx, (ushort)size);
 
                 var bucket = data->GetBucket(key);
 
@@ -282,7 +284,7 @@ namespace BovineLabs.Core.Iterators
             }
             else
             {
-                data->CheckType<TValue>(idx);
+                data->CheckSize<TValue>(idx);
             }
 
             if (isLarge)
@@ -332,10 +334,96 @@ namespace BovineLabs.Core.Iterators
             }
         }
 
+        internal static void AddOrSetRaw(DynamicBuffer<byte> buffer, ref DynamicUntypedHashMapHelper<TKey>* data, in TKey key, void* value, int length)
+        {
+            Check.Assume(length >= 0, "Size must be non-negative");
+            Check.Assume(length <= ushort.MaxValue, "Size exceeds max allowed size of ushort.MaxValue");
+
+            var idx = data->Find(key);
+            var isLarge = length > sizeof(int);
+            var add = idx == -1;
+
+            if (add)
+            {
+                // Allocate an entry from the free list
+                if (data->Count == data->Capacity)
+                {
+                    var newCap = CalcCapacityCeilPow2(data->Count, data->Capacity + (1 << data->Log2MinGrowth), data->Log2MinGrowth);
+                    Resize(buffer, ref data, newCap);
+                }
+
+                idx = data->Count++;
+
+                data->CheckIndexOutOfBounds(idx);
+
+                UnsafeUtility.WriteArrayElement(data->Keys, idx, key);
+                UnsafeUtility.WriteArrayElement(data->Sizes, idx, (ushort)length);
+
+                var bucket = data->GetBucket(key);
+
+                // Add the index to the hash-map
+                var next = data->Next;
+                next[idx] = data->Buckets[bucket];
+                data->Buckets[bucket] = idx;
+            }
+            else
+            {
+                data->CheckSize(idx, length);
+            }
+
+            if (isLarge)
+            {
+                int dataAllocatedIndex;
+
+                // Sets don't need to allocate, element should already exist
+                if (add)
+                {
+                    var alignedSize = CollectionHelper.Align(length, sizeof(int));
+                    var intsRequired = alignedSize / sizeof(int);
+
+                    var minNewCapacity = data->DataAllocatedIndex + intsRequired;
+                    if (minNewCapacity > data->DataCapacity)
+                    {
+                        var newCap = data->DataCapacity;
+                        do
+                        {
+                            newCap = CalcCapacityCeilPow2(newCap + (1 << data->Log2MinGrowth), data->Log2MinGrowth);
+                        }
+                        while (newCap < minNewCapacity);
+
+                        ResizeData(buffer, ref data, newCap);
+                    }
+
+                    dataAllocatedIndex = data->DataAllocatedIndex;
+
+                    var dst = (int*)data->Values + idx;
+                    *dst = data->DataAllocatedIndex;
+
+                    data->DataAllocatedIndex += intsRequired;
+                }
+                else
+                {
+                    // Set, just read the stored address
+                    dataAllocatedIndex = *((int*)data->Values + idx);
+                }
+
+                if (length > 0)
+                {
+                    var ptr = (byte*)(data->Data + dataAllocatedIndex);
+                    UnsafeUtility.MemCpy(ptr, value, length);
+                }
+            }
+            else if (length > 0)
+            {
+                var dst = data->Values + (idx * sizeof(int));
+                UnsafeUtility.MemCpy(dst, value, length);
+            }
+        }
+
         internal static ref TValue GetValue<TValue>(DynamicUntypedHashMapHelper<TKey>* data, int idx)
             where TValue : unmanaged
         {
-            data->CheckType<TValue>(idx);
+            data->CheckSize<TValue>(idx);
 
             var isLarge = sizeof(TValue) > sizeof(int);
             if (isLarge)
@@ -347,6 +435,18 @@ namespace BovineLabs.Core.Iterators
             }
 
             return ref UnsafeUtility.AsRef<TValue>(data->Values + (idx * sizeof(int)));
+        }
+
+        internal static byte* GetValueRaw(DynamicUntypedHashMapHelper<TKey>* data, int idx, out int length)
+        {
+            length = UnsafeUtility.ReadArrayElement<ushort>(data->Sizes, idx);
+            if (length > sizeof(int))
+            {
+                var dataAllocatedIndex = *((int*)data->Values + idx);
+                return (byte*)(data->Data + dataAllocatedIndex);
+            }
+
+            return data->Values + (idx * sizeof(int));
         }
 
         internal static int AddUnique<TValue>(DynamicBuffer<byte> buffer, ref DynamicUntypedHashMapHelper<TKey>* data, in TKey key, TValue value)
@@ -366,7 +466,10 @@ namespace BovineLabs.Core.Iterators
             data->CheckIndexOutOfBounds(idx);
 
             UnsafeUtility.WriteArrayElement(data->Keys, idx, key);
-            UnsafeUtility.WriteArrayElement(data->Types, idx, BurstRuntime.GetHashCode32<TValue>());
+
+            var size = UnsafeUtility.SizeOf<TValue>();
+            Check.Assume(size <= ushort.MaxValue, "Size exceeds max allowed size of ushort.MaxValue");
+            UnsafeUtility.WriteArrayElement(data->Sizes, idx, (ushort)size);
 
             var bucket = data->GetBucket(key);
 
@@ -407,6 +510,71 @@ namespace BovineLabs.Core.Iterators
             {
                 var dst = (TValue*)(data->Values + (idx * sizeof(int)));
                 *dst = value;
+            }
+
+            return idx;
+        }
+
+        internal static int AddUniqueRaw(DynamicBuffer<byte> buffer, ref DynamicUntypedHashMapHelper<TKey>* data, in TKey key, void* value, int length)
+        {
+            Check.Assume(length >= 0, "Size must be non-negative");
+            Check.Assume(length <= ushort.MaxValue, "Size exceeds max allowed size of ushort.MaxValue");
+            data->CheckDoesNotExist(key);
+
+            // Allocate an entry from the free list
+            if (data->Count == data->Capacity)
+            {
+                var newCap = CalcCapacityCeilPow2(data->Count, data->Capacity + (1 << data->Log2MinGrowth), data->Log2MinGrowth);
+                Resize(buffer, ref data, newCap);
+            }
+
+            var idx = data->Count++;
+
+            data->CheckIndexOutOfBounds(idx);
+
+            UnsafeUtility.WriteArrayElement(data->Keys, idx, key);
+            UnsafeUtility.WriteArrayElement(data->Sizes, idx, (ushort)length);
+
+            var bucket = data->GetBucket(key);
+
+            // Add the index to the hash-map
+            var next = data->Next;
+            next[idx] = data->Buckets[bucket];
+            data->Buckets[bucket] = idx;
+
+            if (length > sizeof(int))
+            {
+                var alignedSize = CollectionHelper.Align(length, sizeof(int));
+                var intsRequired = alignedSize / sizeof(int);
+
+                var minNewCapacity = data->DataAllocatedIndex + intsRequired;
+                if (minNewCapacity > data->DataCapacity)
+                {
+                    var newCap = data->DataCapacity;
+                    do
+                    {
+                        newCap = CalcCapacityCeilPow2(newCap + (1 << data->Log2MinGrowth), data->Log2MinGrowth);
+                    }
+                    while (newCap < minNewCapacity);
+
+                    ResizeData(buffer, ref data, newCap);
+                }
+
+                var ptr = (byte*)(data->Data + data->DataAllocatedIndex);
+                if (length > 0)
+                {
+                    UnsafeUtility.MemCpy(ptr, value, length);
+                }
+
+                var dst = (int*)data->Values + idx;
+                *dst = data->DataAllocatedIndex;
+
+                data->DataAllocatedIndex += intsRequired;
+            }
+            else if (length > 0)
+            {
+                var dst = data->Values + (idx * sizeof(int));
+                UnsafeUtility.MemCpy(dst, value, length);
             }
 
             return idx;
@@ -466,6 +634,25 @@ namespace BovineLabs.Core.Iterators
             return false;
         }
 
+        internal bool TryGetValueRaw(TKey key, out byte* value, out int length)
+        {
+            var idx = this.Find(key);
+
+            if (idx != -1)
+            {
+                fixed (DynamicUntypedHashMapHelper<TKey>* data = &this)
+                {
+                    value = GetValueRaw(data, idx, out length);
+                }
+
+                return true;
+            }
+
+            value = null;
+            length = 0;
+            return false;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int CalcCapacityCeilPow2(int count, int capacity, int log2MinGrowth)
         {
@@ -491,31 +678,31 @@ namespace BovineLabs.Core.Iterators
         }
 
         private static int CalculateDataSize(
-            int capacity, int bucketCapacity, int dataCapacity, out int outKeyOffset, out int outNextOffset, out int outBucketOffset, out int outTypeOffset,
+            int capacity, int bucketCapacity, int dataCapacity, out int outKeyOffset, out int outNextOffset, out int outBucketOffset, out int outSizeOffset,
             out int outDataOffset)
         {
             var sizeOfTKey = sizeof(TKey);
             var sizeOfInt = sizeof(int);
-            var sizeOfTypeIndex = sizeof(int);
+            var sizeOfUShort = sizeof(ushort);
             var alignOfTKey = UnsafeUtility.AlignOf<TKey>();
 
             var valuesSize = sizeOfInt * capacity;
             var keysSize = sizeOfTKey * capacity;
             var nextSize = sizeOfInt * capacity;
             var bucketSize = sizeOfInt * bucketCapacity;
-            var typeSize = sizeOfTypeIndex * capacity;
+            var sizeSize = sizeOfUShort * capacity;
             var dataSize = sizeOfInt * dataCapacity;
 
             // Layout is:
-            // Values (int[capacity]) -> Keys (TKey[capacity]) -> Next (int[capacity]) -> Buckets (int[bucketCapacity]) -> Types (int[capacity]) -> Data (int[dataCapacity])
+            // Values (int[capacity]) -> Keys (TKey[capacity]) -> Next (int[capacity]) -> Buckets (int[bucketCapacity]) -> Sizes (ushort[capacity]) -> Data (int[dataCapacity])
             // Explicitly align each segment to avoid misaligned reads/writes on strict platforms.
             outKeyOffset = CollectionHelper.Align(valuesSize, alignOfTKey);
             outNextOffset = CollectionHelper.Align(outKeyOffset + keysSize, sizeOfInt);
             outBucketOffset = CollectionHelper.Align(outNextOffset + nextSize, sizeOfInt);
-            outTypeOffset = CollectionHelper.Align(outBucketOffset + bucketSize, sizeOfInt);
+            outSizeOffset = CollectionHelper.Align(outBucketOffset + bucketSize, sizeOfUShort);
 
             // Large values are stored in the Data segment; align the segment so values with higher alignment (e.g. 16) can be stored correctly.
-            outDataOffset = CollectionHelper.Align(outTypeOffset + typeSize, 16);
+            outDataOffset = CollectionHelper.Align(outSizeOffset + sizeSize, 16);
 
             return outDataOffset + dataSize;
         }
@@ -545,14 +732,22 @@ namespace BovineLabs.Core.Iterators
         [Conditional("ENABLE_UNITY_COLLECTIONS_CHECKS")]
         [Conditional("UNITY_DOTS_DEBUG")]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void CheckType<TValue>(int idx)
+        private void CheckSize<TValue>(int idx)
             where TValue : unmanaged
         {
-            var expected = BurstRuntime.GetHashCode32<TValue>();
-            var actual = UnsafeUtility.ReadArrayElement<int>(this.Types, idx);
-            if (!expected.Equals(actual))
+            var expected = UnsafeUtility.SizeOf<TValue>();
+            this.CheckSize(idx, expected);
+        }
+
+        [Conditional("ENABLE_UNITY_COLLECTIONS_CHECKS")]
+        [Conditional("UNITY_DOTS_DEBUG")]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void CheckSize(int idx, int expected)
+        {
+            var actual = UnsafeUtility.ReadArrayElement<ushort>(this.Sizes, idx);
+            if (expected != actual)
             {
-                throw new InvalidOperationException($"Type {actual} does not match stored {expected}");
+                throw new InvalidOperationException($"Size of type {expected} does not match stored {actual}");
             }
         }
 

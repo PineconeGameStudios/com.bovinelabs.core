@@ -91,6 +91,17 @@ namespace BovineLabs.Core.Iterators
             DynamicUntypedHashMapHelper<TKey>.AddOrSet(this.buffer, ref this.helper, key, item);
         }
 
+        /// <summary> Adds or sets a key-value pair using raw bytes. </summary>
+        /// <param name="key"> The key to add. </param>
+        /// <param name="value"> Pointer to the value data. </param>
+        /// <param name="length"> The size in bytes. </param>
+        public void AddOrSetRaw(TKey key, void* value, int length)
+        {
+            this.buffer.CheckWriteAccess();
+            this.RefCheck();
+            DynamicUntypedHashMapHelper<TKey>.AddOrSetRaw(this.buffer, ref this.helper, key, value, length);
+        }
+
         /// <summary> Gets a value if it exists otherwise adds i then returns it by ref. </summary>
         /// <param name="key"> The key to add. </param>
         /// <param name="defaultValue"> Value to use if the key doesn't exist. </param>
@@ -111,6 +122,26 @@ namespace BovineLabs.Core.Iterators
             return ref DynamicUntypedHashMapHelper<TKey>.GetValue<TValue>(this.helper, idx);
         }
 
+        /// <summary> Gets a value if it exists otherwise adds it then returns it by pointer. </summary>
+        /// <param name="key"> The key to add. </param>
+        /// <param name="defaultValue"> Pointer to the value data. </param>
+        /// <param name="length"> The size in bytes. </param>
+        /// <param name="storedLength"> Outputs the size in bytes. </param>
+        /// <returns> Pointer to the value in the map. </returns>
+        public byte* GetOrAddRaw(TKey key, void* defaultValue, int length, out int storedLength)
+        {
+            this.buffer.CheckWriteAccess();
+            this.RefCheck();
+
+            var idx = this.helper->Find(key);
+            if (idx == -1)
+            {
+                idx = DynamicUntypedHashMapHelper<TKey>.AddUniqueRaw(this.buffer, ref this.helper, key, defaultValue, length);
+            }
+
+            return DynamicUntypedHashMapHelper<TKey>.GetValueRaw(this.helper, idx, out storedLength);
+        }
+
         /// <summary> Returns the value associated with a key. </summary>
         /// <param name="key"> The key to look up. </param>
         /// <param name="item"> Outputs the value associated with the key. Outputs default if the key was not present. </param>
@@ -122,6 +153,18 @@ namespace BovineLabs.Core.Iterators
             this.buffer.CheckReadAccess();
             this.RefCheck();
             return this.helper->TryGetValue(key, out item);
+        }
+
+        /// <summary> Returns the raw value associated with a key. </summary>
+        /// <param name="key"> The key to look up. </param>
+        /// <param name="value"> Outputs pointer to the value data. Outputs null if the key was not present. </param>
+        /// <param name="length"> Outputs the size in bytes. </param>
+        /// <returns> True if the key was present. </returns>
+        public readonly bool TryGetValueRaw(TKey key, out byte* value, out int length)
+        {
+            this.buffer.CheckReadAccess();
+            this.RefCheck();
+            return this.helper->TryGetValueRaw(key, out value, out length);
         }
 
         public readonly bool ContainsKey(TKey key)
