@@ -1,4 +1,4 @@
-// <copyright file="ComponentAssetEditor.cs" company="BovineLabs">
+// <copyright file="ComponentAssetBaseEditor.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
