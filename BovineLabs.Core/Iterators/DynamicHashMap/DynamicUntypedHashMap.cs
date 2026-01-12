@@ -95,7 +95,7 @@ namespace BovineLabs.Core.Iterators
         /// <param name="key"> The key to add. </param>
         /// <param name="value"> Pointer to the value data. </param>
         /// <param name="length"> The size in bytes. </param>
-        public void AddOrSetRaw(TKey key, void* value, int length)
+        public void AddOrSet(TKey key, void* value, int length)
         {
             this.buffer.CheckWriteAccess();
             this.RefCheck();
@@ -160,7 +160,7 @@ namespace BovineLabs.Core.Iterators
         /// <param name="value"> Outputs pointer to the value data. Outputs null if the key was not present. </param>
         /// <param name="length"> Outputs the size in bytes. </param>
         /// <returns> True if the key was present. </returns>
-        public readonly bool TryGetValueRaw(TKey key, out byte* value, out int length)
+        public readonly bool TryGetValue(TKey key, out byte* value, out int length)
         {
             this.buffer.CheckReadAccess();
             this.RefCheck();
