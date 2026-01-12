@@ -4,11 +4,8 @@
 
 namespace BovineLabs.Core.Editor.Component
 {
-    using System.Collections.Generic;
+    using System;
     using BovineLabs.Core.Editor.Inspectors;
-    using BovineLabs.Core.Editor.SearchWindow;
-    using BovineLabs.Core.Editor.UI;
-    using BovineLabs.Core.Utility;
     using UnityEditor;
     using UnityEditor.Search;
     using UnityEngine;
@@ -18,15 +15,13 @@ namespace BovineLabs.Core.Editor.Component
     [CustomEditor(typeof(TypeAsset))]
     public class TypeAssetEditor : ElementEditor
     {
-        private static readonly List<SearchView.Item> TypeList = new();
-
         private Button? button;
 
         protected override VisualElement? CreateElement(SerializedProperty property)
         {
             return property.name switch
             {
-                "typeName" => this.button = new Button(() => this.Search(property)) { text = property.stringValue },
+                "typeName" => this.button = new Button(() => this.Search(property)) { text = FormatName(property.stringValue), tooltip = property.stringValue },
                 _ => base.CreateElement(property),
             };
         }
@@ -49,10 +44,22 @@ namespace BovineLabs.Core.Editor.Component
 
                     property.stringValue = item.data as string ?? string.Empty;
                     property.serializedObject.ApplyModifiedProperties();
-                    this.button!.text = property.stringValue;
+                    this.button!.text = FormatName(property.stringValue);
+                    this.button.tooltip = property.stringValue;
                 },
             };
             SearchService.ShowPicker(viewState);
+        }
+
+        private static string FormatName(string typeName)
+        {
+            var type = Type.GetType(typeName);
+            if (type == null)
+            {
+                return $"Missing type {typeName}";
+            }
+
+            return type.Name;
         }
     }
 }

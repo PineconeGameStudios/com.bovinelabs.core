@@ -74,7 +74,7 @@ namespace BovineLabs.Core.Editor.Component
 
                 foreach (var data in query?.Apply(toFilter) ?? toFilter)
                 {
-                    yield return provider.CreateItem(context, data.FullName, score++, data.Name, null, null, data.FullName);
+                    yield return provider.CreateItem(context, data.FullName, score++, data.Name, data.SimplifiedQualifiedName, null, data.FullName);
                 }
             }
         }
@@ -131,6 +131,8 @@ namespace BovineLabs.Core.Editor.Component
             }
 
             public string Name => this.Type.Name;
+
+            public string SimplifiedQualifiedName => $"{this.Type.FullName}, {this.Type.Assembly.GetName().Name}";
 
             public string FullName => this.Type.AssemblyQualifiedName;
 

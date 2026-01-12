@@ -17,7 +17,6 @@ namespace BovineLabs.Core
 
         public Type ResolveType()
         {
-
             return Type.GetType(this.typeName);
         }
     }
