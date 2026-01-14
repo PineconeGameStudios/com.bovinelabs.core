@@ -18,24 +18,13 @@ namespace BovineLabs.Core.Editor.Inspectors
     internal abstract class UnityObjectRefInspector<T> : PropertyInspector<UnityObjectRef<T>>
         where T : Object
     {
-        private IntegerField? idField;
         private ObjectField? objectField;
-        private Foldout? field;
 
         /// <inheritdoc/>
         public override VisualElement Build()
         {
-            this.field = new Foldout { value = false };
-
-            this.idField = new IntegerField("Instance Id");
-            this.idField.SetEnabled(false);
-            InspectorUtility.AddRuntimeBar(this.idField);
-
             this.objectField = new ObjectField { enabledSelf = !this.IsReadOnly };
             InspectorUtility.AddRuntimeBar(this.objectField);
-
-            this.field.Add(this.idField);
-            this.field.Add(this.objectField);
 
             this.Update();
 
@@ -44,7 +33,7 @@ namespace BovineLabs.Core.Editor.Inspectors
                 this.Target = (T)evt.newValue;
             });
 
-            return this.field;
+            return this.objectField;
         }
 
         /// <inheritdoc/>
@@ -52,9 +41,8 @@ namespace BovineLabs.Core.Editor.Inspectors
         {
             var target = this.Target;
 
-            this.idField!.value = target.Id.instanceId;
             this.objectField!.value = target.Value;
-            this.field!.text = target.Value == null ? this.DisplayName : $"{this.DisplayName} : {target.Value.name}";
+            this.objectField!.label = target.Value == null ? this.DisplayName : $"{this.DisplayName} : {target.Value.name}";
         }
     }
 
