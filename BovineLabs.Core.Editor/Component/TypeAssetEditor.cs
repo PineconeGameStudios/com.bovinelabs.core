@@ -17,11 +17,16 @@ namespace BovineLabs.Core.Editor.Component
     {
         private Button? button;
 
+        /// <inheritdoc/>
         protected override VisualElement? CreateElement(SerializedProperty property)
         {
             return property.name switch
             {
-                "typeName" => this.button = new Button(() => this.Search(property)) { text = FormatName(property.stringValue), tooltip = property.stringValue },
+                "typeName" => this.button = new Button(() => this.Search(property))
+                {
+                    text = FormatName(property.stringValue),
+                    tooltip = property.stringValue,
+                },
                 _ => base.CreateElement(property),
             };
         }
@@ -30,29 +35,37 @@ namespace BovineLabs.Core.Editor.Component
         {
             var context = SearchService.CreateContext(TypeAsset.SearchProviderType, "unmanaged=true");
 
-            var viewState = new SearchViewState(context, SearchViewFlags.ListView | SearchViewFlags.OpenInBuilderMode | SearchViewFlags.DisableSavedSearchQuery | SearchViewFlags.CompactView)
-            {
-                windowTitle = new GUIContent("Type Selector"),
-                title = "Select Type",
-                position = SearchUtils.GetMainWindowCenteredPosition(new Vector2(600, 400)),
-                selectHandler = (item, canceled) =>
+            var viewState =
+                new SearchViewState(context,
+                    SearchViewFlags.ListView | SearchViewFlags.OpenInBuilderMode | SearchViewFlags.DisableSavedSearchQuery | SearchViewFlags.CompactView)
                 {
-                    if (canceled || item == null)
+                    windowTitle = new GUIContent("Type Selector"),
+                    title = "Select Type",
+                    position = SearchUtils.GetMainWindowCenteredPosition(new Vector2(600, 400)),
+                    selectHandler = (item, canceled) =>
                     {
-                        return;
-                    }
+                        if (canceled || item == null)
+                        {
+                            return;
+                        }
 
-                    property.stringValue = item.data as string ?? string.Empty;
-                    property.serializedObject.ApplyModifiedProperties();
-                    this.button!.text = FormatName(property.stringValue);
-                    this.button.tooltip = property.stringValue;
-                },
-            };
+                        property.stringValue = item.data as string ?? string.Empty;
+                        property.serializedObject.ApplyModifiedProperties();
+                        this.button!.text = FormatName(property.stringValue);
+                        this.button.tooltip = property.stringValue;
+                    },
+                };
+
             SearchService.ShowPicker(viewState);
         }
 
         private static string FormatName(string typeName)
         {
+            if (string.IsNullOrEmpty(typeName))
+            {
+                return "Select a type";
+            }
+
             var type = Type.GetType(typeName);
             if (type == null)
             {

@@ -17,6 +17,11 @@ namespace BovineLabs.Core
 
         public Type ResolveType()
         {
+            if (string.IsNullOrEmpty(this.typeName))
+            {
+                return null;
+            }
+
             return Type.GetType(this.typeName);
         }
     }

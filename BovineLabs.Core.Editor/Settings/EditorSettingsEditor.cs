@@ -19,6 +19,7 @@ namespace BovineLabs.Core.Editor.Settings
         private readonly List<string> removed = new();
 
 
+        /// <inheritdoc/>
         protected override VisualElement? CreateElement(SerializedProperty property)
         {
             return property.name switch

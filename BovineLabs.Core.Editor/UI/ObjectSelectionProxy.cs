@@ -32,10 +32,12 @@ namespace BovineLabs.Core.Editor.UI
             return proxy;
         }
 
+        /// <inheritdoc/>
         public void OnBeforeSerialize()
         {
         }
 
+        /// <inheritdoc/>
         public void OnAfterDeserialize()
         {
         }
