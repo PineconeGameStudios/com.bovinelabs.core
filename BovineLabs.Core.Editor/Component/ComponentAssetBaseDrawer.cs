@@ -23,7 +23,6 @@ namespace BovineLabs.Core.Editor.Component
                 style =
                 {
                     flexDirection = FlexDirection.Row,
-                    alignItems = Align.Center,
                 },
             };
 
@@ -36,9 +35,15 @@ namespace BovineLabs.Core.Editor.Component
             };
 
             var propertyCopy = property.Copy();
-            var button = new Button(() => CreateAsset(propertyCopy)) { text = "+" };
-            button.style.flexShrink = 0f;
-            button.style.marginLeft = 2f;
+            var button = new Button(() => CreateAsset(propertyCopy))
+            {
+                text = "+",
+                style =
+                {
+                    flexShrink = 0f,
+                    marginLeft = 2f,
+                },
+            };
 
             container.Add(field);
             container.Add(button);
