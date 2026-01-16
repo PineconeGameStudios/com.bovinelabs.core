@@ -39,6 +39,7 @@ namespace BovineLabs.Core.Extensions
             return ref hashMap.m_HashMapData.GetOrAddRef(key, defaultValue);
         }
 
+        // This is only safe if the key is unique per thread
         public static ref TValue GetOrAddRef<TKey, TValue>(
             this NativeParallelHashMap<TKey, TValue>.ParallelWriter hashMap, TKey key, TValue defaultValue = default)
             where TKey : unmanaged, IEquatable<TKey>

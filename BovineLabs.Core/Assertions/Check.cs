@@ -40,7 +40,7 @@ namespace BovineLabs.Core.Assertions
                 return;
             }
 
-            Debug.unityLogger.Log(LogType.Assert);
+            Debug.unityLogger.Log(LogType.Assert, "Check failed");
             throw new Exception();
         }
 
