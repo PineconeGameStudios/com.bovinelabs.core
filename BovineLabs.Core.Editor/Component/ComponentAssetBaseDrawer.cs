@@ -1,17 +1,19 @@
-// <copyright file="ComponentAssetDrawer.cs" company="BovineLabs">
+// <copyright file="ComponentAssetBaseDrawer.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
 namespace BovineLabs.Core.Editor.Component
 {
+    using System;
     using BovineLabs.Core;
+    using BovineLabs.Core.Editor.Helpers;
     using UnityEditor;
     using UnityEditor.UIElements;
     using UnityEngine;
     using UnityEngine.UIElements;
 
-    [CustomPropertyDrawer(typeof(ComponentAsset))]
-    public class ComponentAssetDrawer : PropertyDrawer
+    [CustomPropertyDrawer(typeof(ComponentAssetBase), true)]
+    public class ComponentAssetBaseDrawer : PropertyDrawer
     {
         /// <inheritdoc/>
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
@@ -46,23 +48,50 @@ namespace BovineLabs.Core.Editor.Component
 
         private static void CreateAsset(SerializedProperty property)
         {
+            var assetType = GetAssetType(property);
+            if (assetType == null)
+            {
+                return;
+            }
+
             var path = EditorUtility.SaveFilePanelInProject(
-                "Create Component Asset",
-                "Component",
+                $"Create {assetType.Name}",
+                assetType.Name,
                 "asset",
-                "Choose a location for the new ComponentAsset.");
+                $"Choose a location for the new {assetType.Name}.");
 
             if (string.IsNullOrEmpty(path))
             {
                 return;
             }
 
-            var asset = ScriptableObject.CreateInstance<ComponentAsset>();
+            var asset = ScriptableObject.CreateInstance(assetType);
             AssetDatabase.CreateAsset(asset, path);
             AssetDatabase.SaveAssets();
 
             property.objectReferenceValue = asset;
             property.serializedObject.ApplyModifiedProperties();
+        }
+
+        private static Type? GetAssetType(SerializedProperty property)
+        {
+            if (property.objectReferenceValue != null)
+            {
+                return property.objectReferenceValue.GetType();
+            }
+
+            var fieldType = property.GetFieldType();
+            if (fieldType == null)
+            {
+                return null;
+            }
+
+            if (fieldType.IsAbstract || !typeof(ComponentAssetBase).IsAssignableFrom(fieldType))
+            {
+                return null;
+            }
+
+            return fieldType;
         }
     }
 }

@@ -21,6 +21,12 @@ namespace BovineLabs.Core.Authoring
 
                 foreach (var c in authoring.Components)
                 {
+                    if (c == null)
+                    {
+                        continue;
+                    }
+
+                    this.DependsOn(c);
                     this.AddComponent(entity, c.GetComponentType());
                 }
             }
