@@ -6,6 +6,7 @@ namespace BovineLabs.Core.Editor.ObjectManagement
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using System.Reflection;
     using BovineLabs.Core.Editor.Inspectors;
@@ -61,7 +62,7 @@ namespace BovineLabs.Core.Editor.ObjectManagement
             {
                 this.Element.RegisterCallback<GeometryChangedEvent>(this.Init);
                 this.Element.AddManipulator(new ContextualMenuManipulator(this.MenuBuilder));
-                this.path = OMUtility.GetDefaultPath(this.attribute);
+                this.path = this.isAbstract ? OMUtility.GetDefaultPathWithoutFileName(this.attribute) : OMUtility.GetDefaultPath(this.attribute);
             }
         }
 
@@ -109,16 +110,20 @@ namespace BovineLabs.Core.Editor.ObjectManagement
 
                 if (this.isAbstract)
                 {
+                    // Remove the elements unity just force added, they will be added back properly via autoref
+                    this.serializedObject.Update();
+                    this.serializedProperty.arraySize -= count;
+                    this.serializedObject.ApplyModifiedPropertiesWithoutUndo();
+
                     var searchWindow = SearchWindow.Create();
 
                     searchWindow.Items = this.items;
                     searchWindow.OnSelection += item =>
                     {
                         var t = (Type)item.Data;
-                        Create(count, t, this.path!);
+                        var p = Path.Combine(this.path!, item.Name + ".asset");
+                        Create(count, t, p);
                     };
-
-                    searchWindow.OnClose += () => Debug.Log("Close");
 
                     var button = this.listView.Q<Button>("unity-list-view__add-button");
 

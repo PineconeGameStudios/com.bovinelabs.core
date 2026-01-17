@@ -22,8 +22,13 @@ namespace BovineLabs.Core.Editor.ObjectManagement
 
         public static string GetDefaultPath(AutoRefAttribute attr)
         {
-            var directory = EditorSettingsUtility.GetAssetDirectory(attr.DirectoryKey, attr.DefaultDirectory)!;
+            var directory = GetDefaultPathWithoutFileName(attr);
             return Path.Combine(directory, attr.DefaultFileName);
+        }
+
+        public static string GetDefaultPathWithoutFileName(AutoRefAttribute attr)
+        {
+            return EditorSettingsUtility.GetAssetDirectory(attr.DirectoryKey, attr.DefaultDirectory)!;
         }
     }
 }
