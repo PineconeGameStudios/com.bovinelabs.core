@@ -5,10 +5,14 @@
 namespace BovineLabs.Core.Editor.ObjectManagement
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
     using BovineLabs.Core.Editor.Inspectors;
+    using BovineLabs.Core.Editor.SearchWindow;
+    using BovineLabs.Core.Editor.UI;
     using BovineLabs.Core.ObjectManagement;
+    using BovineLabs.Core.Utility;
     using UnityEditor;
     using UnityEditor.UIElements;
     using UnityEngine;
@@ -20,6 +24,8 @@ namespace BovineLabs.Core.Editor.ObjectManagement
         private readonly SerializedObject serializedObject;
         private readonly SerializedProperty serializedProperty;
         private readonly Type type;
+        private readonly bool isAbstract;
+        private readonly List<SearchView.Item> items = new();
 
         private ListView? listView;
 
@@ -34,6 +40,21 @@ namespace BovineLabs.Core.Editor.ObjectManagement
             this.type = type;
             this.serializedProperty.isExpanded = false;
 
+            this.isAbstract = this.type.IsAbstract;
+
+            if (this.isAbstract)
+            {
+                foreach (var i in ReflectionUtility.GetAllImplementations(type))
+                {
+                    this.items.Add(new SearchView.Item
+                    {
+                        Path = i.Name,
+                        Data = i,
+                    });
+                }
+
+            }
+
             this.Element = PropertyUtil.CreateProperty(serializedProperty, this.serializedObject);
 
             if (this.attribute != null)
@@ -43,6 +64,8 @@ namespace BovineLabs.Core.Editor.ObjectManagement
                 this.path = OMUtility.GetDefaultPath(this.attribute);
             }
         }
+
+        public PropertyField Element { get; }
 
         private static AutoRefAttribute? TryGetAttribute(SerializedObject serializedObject, SerializedProperty serializedProperty, Type type)
         {
@@ -65,8 +88,6 @@ namespace BovineLabs.Core.Editor.ObjectManagement
             return attribute;
         }
 
-        public PropertyField Element { get; }
-
         private void Init(GeometryChangedEvent evt)
         {
             this.listView = this.Element.Q<ListView>();
@@ -85,9 +106,40 @@ namespace BovineLabs.Core.Editor.ObjectManagement
             this.listView.itemsAdded += ints =>
             {
                 var count = ints.Count();
-                for (var i = 0; i < count; i++)
+
+                if (this.isAbstract)
                 {
-                    OMUtility.CreateInstance(this.type, this.path!);
+                    var searchWindow = SearchWindow.Create();
+
+                    searchWindow.Items = this.items;
+                    searchWindow.OnSelection += item =>
+                    {
+                        var t = (Type)item.Data;
+                        Create(count, t, this.path!);
+                    };
+
+                    searchWindow.OnClose += () => Debug.Log("Close");
+
+                    var button = this.listView.Q<Button>("unity-list-view__add-button");
+
+                    var screenPosition = VisualElementUtil.GetScreenPosition(button);
+                    var size = new Rect(screenPosition.x, screenPosition.y + button.worldBound.height, 400, 400);
+                    searchWindow.position = size;
+                    searchWindow.ShowPopup();
+                }
+                else
+                {
+                    Create(count, this.type, this.path!);
+                }
+
+                return;
+
+                static void Create(int count, Type selectedType, string path)
+                {
+                    for (var i = 0; i < count; i++)
+                    {
+                        OMUtility.CreateInstance(selectedType, path);
+                    }
                 }
             };
 

@@ -4,14 +4,10 @@
 
 namespace BovineLabs.Core.Editor.Inspectors
 {
-    using Unity.Entities;
-    using Unity.Entities.Editor;
     using Unity.Entities.Serialization;
     using Unity.Entities.UI;
-    using Unity.Properties;
     using UnityEditor;
     using UnityEditor.UIElements;
-    using UnityEngine;
     using UnityEngine.UIElements;
     using InspectorUtility = BovineLabs.Core.Editor.Internal.InspectorUtility;
 

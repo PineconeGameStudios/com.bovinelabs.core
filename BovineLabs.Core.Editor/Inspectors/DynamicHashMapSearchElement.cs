@@ -9,7 +9,6 @@ namespace BovineLabs.Core.Editor.Inspectors
     using BovineLabs.Core.Editor.SearchWindow;
     using BovineLabs.Core.Iterators;
     using Unity.Collections.LowLevel.Unsafe;
-    using Unity.Entities;
     using Unity.Entities.UI;
     using Unity.Properties;
     using SearchElement = BovineLabs.Core.Editor.UI.SearchElement;

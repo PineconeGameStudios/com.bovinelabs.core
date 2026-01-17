@@ -8,7 +8,6 @@ namespace BovineLabs.Core.Editor.Inspectors
     using UnityEditor;
     using UnityEditor.UIElements;
     using UnityEngine.UIElements;
-    using UnityEngine.WSA;
 
     /// <summary> Provides a custom editor ([CustomEditor(typeof(T))]) with custom element but will fall back to PropertyField if not overriden. </summary>
     public abstract class ElementEditor : Editor

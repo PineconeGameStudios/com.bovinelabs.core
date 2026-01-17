@@ -8,7 +8,6 @@ namespace BovineLabs.Core.Editor.Inspectors
     using System.Collections.Generic;
     using BovineLabs.Core.Editor.SearchWindow;
     using BovineLabs.Core.Iterators;
-    using Unity.Entities;
     using UnityEditor.UIElements;
     using UnityEngine.UIElements;
 
