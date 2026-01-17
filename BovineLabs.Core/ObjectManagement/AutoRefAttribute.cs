@@ -27,7 +27,7 @@ namespace BovineLabs.Core.ObjectManagement
     /// }
     /// </code>
     /// </example>
-    [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Class)]
     public class AutoRefAttribute : Attribute
     {
         public AutoRefAttribute(string managerType, string fieldName)

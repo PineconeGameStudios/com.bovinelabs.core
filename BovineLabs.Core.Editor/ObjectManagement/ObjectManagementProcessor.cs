@@ -23,7 +23,9 @@ namespace BovineLabs.Core.Editor.ObjectManagement
 
         private static readonly HashSet<Type> AlreadyProcessedAutoRef = new();
         private static readonly Dictionary<Type, Processor> Processors = new();
-        private static readonly Dictionary<Type, AutoRefAttribute> AutoRefMap = new();
+
+        // Stores the actual type that declared, usually same but can be on a base class
+        private static readonly Dictionary<Type, (AutoRefAttribute Attribute, Type DefiningType)> AutoRefMap = new();
         private static readonly GlobalProcessor Global = new();
 
         private static readonly HashSet<string> Delayed = new();
@@ -107,7 +109,7 @@ namespace BovineLabs.Core.Editor.ObjectManagement
 
                 foreach (var manager in AutoRefMap)
                 {
-                    UpdateAutoRef(manager.Key, manager.Value);
+                    UpdateAutoRef(manager.Key, manager.Value.Attribute, manager.Value.DefiningType);
                 }
 
                 Delayed.Clear();
@@ -127,13 +129,15 @@ namespace BovineLabs.Core.Editor.ObjectManagement
         {
             var type = asset.GetType();
 
-            var attribute = type.GetCustomAttribute<AutoRefAttribute>();
+            var definingType = GetDefiningTypeForAttribute(type);
+            var attribute = definingType?.GetCustomAttribute<AutoRefAttribute>(false);
+
             if (attribute == null)
             {
                 return;
             }
 
-            AutoRefMap[type] = attribute;
+            AutoRefMap[type] = (attribute, definingType!);
         }
 
         private static bool CheckAutoID(Object asset)
@@ -160,7 +164,7 @@ namespace BovineLabs.Core.Editor.ObjectManagement
             return false;
         }
 
-        private static void UpdateAutoRef(Type type, AutoRefAttribute attribute)
+        private static void UpdateAutoRef(Type type, AutoRefAttribute attribute, Type definingType)
         {
             if (!AlreadyProcessedAutoRef.Add(type))
             {
@@ -201,18 +205,18 @@ namespace BovineLabs.Core.Editor.ObjectManagement
                 return;
             }
 
-            if (sp.arrayElementType != $"PPtr<${type.Name}>")
+            if (sp.arrayElementType != $"PPtr<${definingType.Name}>")
             {
-                BLGlobalLogger.LogErrorString($"Property {attribute.FieldName} was not type of {type.Name} for {attribute.ManagerType}");
+                BLGlobalLogger.LogErrorString($"Property {attribute.FieldName} was not type of defining type {definingType.Name} for asset type {type.Namespace} on {attribute.ManagerType}");
                 return;
             }
 
             var objects = AssetDatabase
-                .FindAssets($"t:{type.Name}")
+                .FindAssets($"t:{definingType.Name}")
                 .Select(AssetDatabase.GUIDToAssetPath)
                 .Distinct() // In case multi of same type on same path
                 .SelectMany(AssetDatabase.LoadAllAssetsAtPath)
-                .Where(s => s && s.GetType() == type)
+                .Where(s => s && definingType.IsInstanceOfType(s))
                 .ToList();
 
             sp.arraySize = objects.Count;
@@ -236,6 +240,26 @@ namespace BovineLabs.Core.Editor.ObjectManagement
             }
 
             return 0; // You'd have to hit int.MaxValue ids to ever hit this case, you have other problems
+        }
+
+        private static Type? GetDefiningTypeForAttribute(Type start)
+        {
+            // If the attribute isn't even present via inheritance, return null.
+            if (!start.IsDefined(typeof(AutoRefAttribute), inherit: true))
+            {
+                return null;
+            }
+
+            // Walk upward: "declared only" tells us whether THIS type actually defines it.
+            for (var t = start; t != null; t = t.BaseType)
+            {
+                if (t.IsDefined(typeof(AutoRefAttribute), inherit: false))
+                {
+                    return t;
+                }
+            }
+
+            return null;
         }
 
         private class Processor
