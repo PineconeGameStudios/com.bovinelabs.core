@@ -17,6 +17,7 @@ namespace BovineLabs.Core.Editor.SubScenes
     using Unity.Collections;
     using Unity.Entities;
     using Unity.Scenes;
+    using Unity.Scenes.Editor;
     using UnityEditor;
     using UnityEditor.SceneManagement;
     using UnityEditor.Toolbars;
@@ -91,6 +92,7 @@ namespace BovineLabs.Core.Editor.SubScenes
                     {
                         if (s.Value)
                         {
+                            SubSceneInspectorUtility.CloseAndAskSaveIfUserWantsTo(s.Value);
                             Object.DestroyImmediate(s.Value.gameObject);
                         }
                     }
