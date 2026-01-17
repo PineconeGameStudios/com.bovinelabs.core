@@ -151,13 +151,27 @@ namespace BovineLabs.Core.Editor.ObjectManagement
 
                 case IUID:
                 {
-                    var assetType = asset.GetType();
-                    if (!Processors.TryGetValue(assetType, out var processor))
-                    {
-                        processor = Processors[assetType] = new Processor(assetType);
-                    }
+                    var current = asset.GetType();
 
-                    return processor.Process(asset);
+                    // We always implement it
+                    while (true)
+                    {
+                        var baseType = current.BaseType!; // we will never hit the bottom
+
+                        // We already know targetInterface is assignable from current somewhere in the chain,
+                        // so we only need to find the first point where the base no longer has it.
+                        if (!typeof(IUID).IsAssignableFrom(baseType))
+                        {
+                            if (!Processors.TryGetValue(current, out var processor))
+                            {
+                                processor = Processors[current] = new Processor(current);
+                            }
+
+                            return processor.Process(asset);
+                        }
+
+                        current = baseType;
+                    }
                 }
             }
 
@@ -325,7 +339,7 @@ namespace BovineLabs.Core.Editor.ObjectManagement
                             continue;
                         }
 
-                        if (asset.GetType() != this.type)
+                        if (!this.type.IsInstanceOfType(asset))
                         {
                             continue;
                         }
