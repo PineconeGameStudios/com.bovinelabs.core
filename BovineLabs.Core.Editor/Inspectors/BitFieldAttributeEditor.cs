@@ -83,7 +83,7 @@ namespace BovineLabs.Core.Editor.Inspectors
             }
         }
 
-        protected abstract IEnumerable<(string Name, int Value)>? GetKeyValues(T attr);
+        protected abstract IEnumerable<(string Name, int Value)> GetKeyValues(T attr);
 
         private static ulong Remap(int c, Dictionary<int, int> remap)
         {

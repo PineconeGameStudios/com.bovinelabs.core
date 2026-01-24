@@ -18,7 +18,7 @@ namespace BovineLabs.Core.Editor.Inspectors
     internal abstract class UnityObjectRefInspector<T> : PropertyInspector<UnityObjectRef<T>>
         where T : Object
     {
-        private ObjectField? objectField;
+        private ObjectField objectField;
 
         /// <inheritdoc/>
         public override VisualElement Build()

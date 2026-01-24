@@ -23,11 +23,11 @@ namespace BovineLabs.Core.Editor.Windows.SelectionHistory
         private readonly List<SelectionHistoryItem> filteredNormalItems = new();
 
         private double lastLockedClickTime;
-        private SelectionHistoryItem? lastLockedClickedItem;
+        private SelectionHistoryItem lastLockedClickedItem;
 
-        private SelectionHistoryService? historyService;
-        private ListView? lockedItemsListView;
-        private Button? clearButton;
+        private SelectionHistoryService historyService;
+        private ListView lockedItemsListView;
+        private Button clearButton;
 
         /// <inheritdoc/>
         protected override SelectionHistoryService Service => this.historyService ?? SelectionHistoryService.Instance;
@@ -387,7 +387,7 @@ namespace BovineLabs.Core.Editor.Windows.SelectionHistory
             }
         }
 
-        private SelectionHistoryItem? GetLockedItemAtPosition(Vector2 listLocalPosition)
+        private SelectionHistoryItem GetLockedItemAtPosition(Vector2 listLocalPosition)
         {
             var scrollView = this.lockedItemsListView?.Q<ScrollView>();
             if (scrollView == null)

@@ -78,7 +78,7 @@ namespace BovineLabs.Core.Editor.Component
             property.serializedObject.ApplyModifiedProperties();
         }
 
-        private static Type? GetAssetType(SerializedProperty property)
+        private static Type GetAssetType(SerializedProperty property)
         {
             if (property.objectReferenceValue != null)
             {

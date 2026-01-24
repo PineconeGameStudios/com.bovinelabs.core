@@ -15,10 +15,10 @@ namespace BovineLabs.Core.Editor.Component
     [CustomEditor(typeof(TypeAsset))]
     public class TypeAssetEditor : ElementEditor
     {
-        private Button? button;
+        private Button button;
 
         /// <inheritdoc/>
-        protected override VisualElement? CreateElement(SerializedProperty property)
+        protected override VisualElement CreateElement(SerializedProperty property)
         {
             return property.name switch
             {

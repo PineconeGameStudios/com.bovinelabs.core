@@ -14,7 +14,7 @@ namespace BovineLabs.Core.Editor.Inspectors
     [CustomPropertyDrawer(typeof(PrefabElementAttribute))]
     public class PrefabElementProperty : ElementProperty
     {
-        private SerializedObject? prefabObject;
+        private SerializedObject prefabObject;
 
         private bool IsPrefab => ((Component)this.SerializedObject.targetObject).IsPrefab();
 

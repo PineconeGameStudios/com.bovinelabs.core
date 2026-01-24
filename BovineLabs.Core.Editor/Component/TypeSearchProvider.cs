@@ -15,7 +15,7 @@ namespace BovineLabs.Core.Editor.Component
 
     public static class TypeSearchProvider
     {
-        private static QueryEngine<TypeDescriptor>? queryEngine;
+        private static QueryEngine<TypeDescriptor> queryEngine;
 
         private static QueryEngine<TypeDescriptor> QueryEngine => queryEngine ??= SetupQueryEngine();
 
@@ -54,7 +54,7 @@ namespace BovineLabs.Core.Editor.Component
         {
             var searchQuery = context.searchQuery;
 
-            ParsedQuery<TypeDescriptor>? query = null;
+            ParsedQuery<TypeDescriptor> query = null;
 
             if (!string.IsNullOrEmpty(searchQuery))
             {

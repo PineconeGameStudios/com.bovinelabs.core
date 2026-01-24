@@ -35,7 +35,7 @@ namespace BovineLabs.Core.Editor.Internal
             }
         }
 
-        public static Entity GetPrimaryEntityForAuthoringObject(World? world, Object target)
+        public static Entity GetPrimaryEntityForAuthoringObject(World world, Object target)
         {
             if (world != null)
             {

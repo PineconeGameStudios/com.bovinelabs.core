@@ -13,9 +13,9 @@ namespace BovineLabs.Core.Editor.Inspectors
 
     internal class EntitySceneReferenceInspector : PropertyInspector<EntitySceneReference>
     {
-        private PropertyElement? idField;
-        private ObjectField? objectField;
-        private Foldout? field;
+        private PropertyElement idField;
+        private ObjectField objectField;
+        private Foldout field;
 
         /// <inheritdoc/>
         public override VisualElement Build()
@@ -57,7 +57,7 @@ namespace BovineLabs.Core.Editor.Inspectors
             this.field!.text = sceneAsset == null ? this.DisplayName : $"{this.DisplayName} : {sceneAsset.name}";
         }
 
-        private SceneAsset? GetSceneAsset(EntitySceneReference sceneReference)
+        private SceneAsset GetSceneAsset(EntitySceneReference sceneReference)
         {
             if (!sceneReference.Id.IsValid)
             {

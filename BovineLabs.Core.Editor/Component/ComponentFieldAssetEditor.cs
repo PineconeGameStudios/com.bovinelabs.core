@@ -17,14 +17,14 @@ namespace BovineLabs.Core.Editor.Component
     {
         private readonly List<string> fieldNames = new();
 
-        private SerializedProperty? componentProperty;
-        private SerializedProperty? fieldNameProperty;
+        private SerializedProperty componentProperty;
+        private SerializedProperty fieldNameProperty;
 
-        private PropertyField? componentField;
-        private DropdownField? fieldNameField;
+        private PropertyField componentField;
+        private DropdownField fieldNameField;
 
         /// <inheritdoc/>
-        protected override VisualElement? CreateElement(SerializedProperty property)
+        protected override VisualElement CreateElement(SerializedProperty property)
         {
             switch (property.name)
             {

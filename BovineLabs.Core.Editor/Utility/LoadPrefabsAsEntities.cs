@@ -14,7 +14,7 @@ namespace BovineLabs.Core.Editor.Utility
 
     public static class LoadPrefabsAsEntities
     {
-        private static World? selectedWorld;
+        private static World selectedWorld;
         private static bool loading;
 
         public static bool Enabled

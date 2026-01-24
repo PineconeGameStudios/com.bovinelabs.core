@@ -14,7 +14,7 @@ namespace BovineLabs.Core.Editor.Utility
     public static class ReloadToolbarButton
     {
         private const string ReloadPath = "BovineLabs/Reload";
-        private static MainToolbarDropdown? dropDown;
+        private static MainToolbarDropdown dropDown;
 
         static ReloadToolbarButton()
         {

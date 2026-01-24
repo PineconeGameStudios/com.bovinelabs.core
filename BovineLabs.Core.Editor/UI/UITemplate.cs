@@ -34,14 +34,14 @@ namespace BovineLabs.Core.Editor.UI
         /// <summary> Clones the template into the given root element and applies the style sheets from the template. </summary>
         /// <param name="root"> The element that will serve as the root for cloning the template. </param>
         /// <returns> Returns the updated root for convenience. </returns>
-        public VisualElement Clone(VisualElement? root = null)
+        public VisualElement Clone(VisualElement root = null)
         {
             root = this.CloneTemplate(root);
             this.AddStyleSheetSkinVariant(root);
             return root;
         }
 
-        private VisualElement CloneTemplate(VisualElement? element = null)
+        private VisualElement CloneTemplate(VisualElement element = null)
         {
             if (element == null)
             {
@@ -52,7 +52,7 @@ namespace BovineLabs.Core.Editor.UI
             return element;
         }
 
-        private void AddStyleSheetSkinVariant(VisualElement? element)
+        private void AddStyleSheetSkinVariant(VisualElement element)
         {
             if (this.StyleSheet == null)
             {

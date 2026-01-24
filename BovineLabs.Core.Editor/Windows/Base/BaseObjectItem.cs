@@ -20,7 +20,7 @@ namespace BovineLabs.Core.Editor.Windows.Base
         }
 
         protected BaseObjectItem(
-            UnityEngine.Object? obj, string name, string typeName, string assetPath, GlobalObjectId globalObjectId, Texture2D? icon, DateTime timestamp)
+            UnityEngine.Object obj, string name, string typeName, string assetPath, GlobalObjectId globalObjectId, Texture2D icon, DateTime timestamp)
         {
             this.Name = name;
             this.TypeName = typeName;
@@ -48,7 +48,7 @@ namespace BovineLabs.Core.Editor.Windows.Base
         public WeakReference ObjectRef { get; }
 
         /// <summary>Gets the icon/thumbnail for the object.</summary>
-        public Texture2D? Icon { get; private set; }
+        public Texture2D Icon { get; private set; }
 
         /// <summary>Gets the GlobalObjectId for persistent object identification.</summary>
         public GlobalObjectId GlobalId { get; }
@@ -61,7 +61,7 @@ namespace BovineLabs.Core.Editor.Windows.Base
 
         /// <summary>Gets the referenced object if it's still alive.</summary>
         /// <returns>The object.</returns>
-        public UnityEngine.Object? GetObject()
+        public UnityEngine.Object GetObject()
         {
             // First try to get from weak reference (fastest)
             var obj = this.ObjectRef.Target as UnityEngine.Object;

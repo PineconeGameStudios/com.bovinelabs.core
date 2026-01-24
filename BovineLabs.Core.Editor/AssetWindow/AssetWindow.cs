@@ -10,8 +10,8 @@ namespace BovineLabs.Core.Editor.AssetWindow
 
     public class AssetWindow : EditorWindow
     {
-        private TextField? textField;
-        private Label? result;
+        private TextField textField;
+        private Label result;
 
         [MenuItem(EditorMenus.RootMenuTools + "Asset", priority = 1015)]
         private static void ShowWindow()

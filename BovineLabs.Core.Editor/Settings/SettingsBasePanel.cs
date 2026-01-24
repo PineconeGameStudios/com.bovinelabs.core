@@ -137,7 +137,7 @@ namespace BovineLabs.Core.Editor.Settings
             return anyChildren;
         }
 
-        private static void AddToKeyWord(IDictionary<string, List<string>> keywords, string keyword, string? parent)
+        private static void AddToKeyWord(IDictionary<string, List<string>> keywords, string keyword, string parent)
         {
             if (!keywords.TryGetValue(keyword, out var parents))
             {

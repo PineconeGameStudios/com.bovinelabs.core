@@ -54,11 +54,11 @@ namespace BovineLabs.Core.Editor.Settings
         /// <typeparam name="T"> The settings type. </typeparam>
         /// <returns> True if settings is created. </returns>
         /// <exception cref="Exception"> Thrown if more than 1 instance found in project. </exception>
-        public static bool TryGetSettings<T>(out T? settings)
+        public static bool TryGetSettings<T>(out T settings)
         {
             var type = typeof(T);
             var result = TryGetSettings(type, out var settingsUntyped);
-            settings = (T?)settingsUntyped;
+            settings = (T)settingsUntyped;
             return result;
         }
 
@@ -67,7 +67,7 @@ namespace BovineLabs.Core.Editor.Settings
         /// <param name="settings"> The settings if found. </param>
         /// <returns> True if settings is created. </returns>
         /// <exception cref="Exception"> Thrown if more than 1 instance found in project. </exception>
-        public static bool TryGetSettings(Type type, out ISettings? settings)
+        public static bool TryGetSettings(Type type, out ISettings settings)
         {
             if (CachedSettings.TryGetValue(type, out settings) && settings != null)
             {
@@ -85,7 +85,7 @@ namespace BovineLabs.Core.Editor.Settings
         }
 
         // Can only be null if allowCreate is false
-        public static string? GetAssetDirectory(string key, string defaultDirectory, string subDirectory = "", bool allowCreate = true)
+        public static string GetAssetDirectory(string key, string defaultDirectory, string subDirectory = "", bool allowCreate = true)
         {
             GetEditorSettings()?.GetOrAddPath(key, ref defaultDirectory);
 
@@ -123,7 +123,7 @@ namespace BovineLabs.Core.Editor.Settings
 
                 foreach (var world in worlds)
                 {
-                    SettingsAuthoring? authoring;
+                    SettingsAuthoring authoring;
 
                     if (string.IsNullOrWhiteSpace(world))
                     {
@@ -203,7 +203,7 @@ namespace BovineLabs.Core.Editor.Settings
             }
         }
 
-        private static ISettings? GetOrCreateSettings(Type type, bool allowCreate = true)
+        private static ISettings GetOrCreateSettings(Type type, bool allowCreate = true)
         {
             if (!typeof(ISettings).IsAssignableFrom(type))
             {
@@ -213,7 +213,7 @@ namespace BovineLabs.Core.Editor.Settings
             var filter = type.Namespace == null ? type.Name : $"{type.Namespace}.{type.Name}";
             var assets = AssetDatabase.FindAssets($"t:{filter}");
 
-            ScriptableObject? instance;
+            ScriptableObject instance;
 
             switch (assets.Length)
             {
@@ -305,7 +305,7 @@ namespace BovineLabs.Core.Editor.Settings
             return string.Compare(obj1.name, obj2.name, StringComparison.Ordinal) > 0;
         }
 
-        private static EditorSettings? GetEditorSettings()
+        private static EditorSettings GetEditorSettings()
         {
             var assets = AssetDatabase.FindAssets($"t:{nameof(EditorSettings)}");
 

@@ -20,7 +20,7 @@ namespace BovineLabs.Core.Editor.Settings
 
 
         /// <inheritdoc/>
-        protected override VisualElement? CreateElement(SerializedProperty property)
+        protected override VisualElement CreateElement(SerializedProperty property)
         {
             return property.name switch
             {
@@ -163,7 +163,7 @@ namespace BovineLabs.Core.Editor.Settings
 
             return;
 
-            static void ClearSettings(SettingsAuthoring? authoring)
+            static void ClearSettings(SettingsAuthoring authoring)
             {
                 if (authoring == null)
                 {

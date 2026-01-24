@@ -51,7 +51,6 @@ The Core library maintains the status quo in your project by default. However, t
 | [Analyzers](Documentation~/Analyzers.md)                | Automatic Roslyn analyzer integration infrastructure for seamless code analysis and style enforcement |
 | [Camera](Documentation~/Camera.md)                      | ECS camera integration with frustum culling and Unity Camera synchronization                          |
 | [EntityBlob](Documentation~/EntityBlob.md)              | Memory-efficient storage of multiple BlobAssetReferences in a single blob using perfect hash maps     |
-| [Input](Documentation~/Input.md)                        | Support for input integrated with entities using source generation and common properties              |
 | [Life Cycle](Documentation~/LifeCycle.md)               | Framework for managing entity initialization and destruction                                          |
 | [Object Management](Documentation~/ObjectManagement.md) | Automatic ID, category and group management                                                           |
 | [Pause](Documentation~/Pause.md)                        | World-level pause system with fine-grained control over system updates during pause states            |

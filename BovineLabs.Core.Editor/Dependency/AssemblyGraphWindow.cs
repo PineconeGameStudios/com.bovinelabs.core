@@ -23,8 +23,8 @@ namespace BovineLabs.Core.Editor.Dependency
         private static readonly UITemplate AssemblyGraphWindowTemplate = new(RootUIPath + "AssemblyGraphWindow");
 
         private readonly List<DependencyData> dependencyData = new();
-        private ScrollView? content;
-        private DropdownField? mode;
+        private ScrollView content;
+        private DropdownField mode;
 
         [MenuItem(EditorMenus.RootMenuTools + "Assembly Graph", priority = 1011)]
         private static void Execute()

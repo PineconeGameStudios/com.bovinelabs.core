@@ -256,7 +256,7 @@ namespace BovineLabs.Core.Editor.ObjectManagement
             return 0; // You'd have to hit int.MaxValue ids to ever hit this case, you have other problems
         }
 
-        private static Type? GetDefiningTypeForAttribute(Type start)
+        private static Type GetDefiningTypeForAttribute(Type start)
         {
             // If the attribute isn't even present via inheritance, return null.
             if (!start.IsDefined(typeof(AutoRefAttribute), inherit: true))

@@ -42,7 +42,7 @@ namespace BovineLabs.Core.Editor.Welcome
         private Button enableExtensionsButton = null!;
         private FeatureToggle menuLocationToggle = null!;
         private FeatureToggle inspectorSearchToggle = null!;
-        private ListRequest? packageListRequest;
+        private ListRequest packageListRequest;
         private bool extensionsSupported;
         private bool extensionsEnabled;
         private bool packageListUpdateRegistered;
@@ -834,7 +834,7 @@ namespace BovineLabs.Core.Editor.Welcome
 
             public bool Installed { get; set; }
 
-            public AddAndRemoveRequest? InstallRequest { get; set; }
+            public AddAndRemoveRequest InstallRequest { get; set; }
 
             public bool HadError { get; set; }
         }

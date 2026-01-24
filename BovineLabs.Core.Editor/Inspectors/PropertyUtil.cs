@@ -9,7 +9,7 @@ namespace BovineLabs.Core.Editor.Inspectors
 
     public static class PropertyUtil
     {
-        public static PropertyField CreateProperty(SerializedProperty? property, SerializedObject serializedObject)
+        public static PropertyField CreateProperty(SerializedProperty property, SerializedObject serializedObject)
         {
             var field = new PropertyField(property)
             {
@@ -20,7 +20,7 @@ namespace BovineLabs.Core.Editor.Inspectors
             return field;
         }
 
-        public static PropertyField CreateProperty(SerializedProperty? property)
+        public static PropertyField CreateProperty(SerializedProperty property)
         {
             var field = new PropertyField(property)
             {

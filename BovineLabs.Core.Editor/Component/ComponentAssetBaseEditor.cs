@@ -13,10 +13,10 @@ namespace BovineLabs.Core.Editor.Component
     [CustomEditor(typeof(ComponentAssetBase), isFallback = true)]
     public class ComponentAssetBaseEditor : ElementEditor
     {
-        private SerializedProperty? componentNameProperty;
+        private SerializedProperty componentNameProperty;
 
         /// <inheritdoc/>
-        protected override VisualElement? CreateElement(SerializedProperty property)
+        protected override VisualElement CreateElement(SerializedProperty property)
         {
             switch (property.name)
             {

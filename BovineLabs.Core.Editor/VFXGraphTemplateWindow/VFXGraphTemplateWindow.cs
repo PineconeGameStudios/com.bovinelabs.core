@@ -17,9 +17,9 @@ namespace BovineLabs.Core.Editor.VFXGraphTemplateWindow
         private const string RootUIPath = "Packages/com.bovinelabs.core/Editor Default Resources/VFXGraphTemplateWindow/";
         private static readonly UITemplate Window = new(RootUIPath + "VFXGraphTemplateWindow");
 
-        private TextField? nameField;
-        private TextField? categoryField;
-        private TextField? descriptionField;
+        private TextField nameField;
+        private TextField categoryField;
+        private TextField descriptionField;
 
         [MenuItem(EditorMenus.RootMenuTools + "Create VFX Template", priority = -15)]
         private static void ShowWindow()
@@ -64,7 +64,7 @@ namespace BovineLabs.Core.Editor.VFXGraphTemplateWindow
             });
         }
 
-        private static bool TryGetPath(out string? path)
+        private static bool TryGetPath(out string path)
         {
             var asset = Selection.activeObject as VisualEffectAsset;
             if (!asset)

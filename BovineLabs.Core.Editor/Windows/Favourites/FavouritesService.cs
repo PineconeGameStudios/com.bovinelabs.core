@@ -19,7 +19,7 @@ namespace BovineLabs.Core.Editor.Windows.Favourites
     {
         public const string PreferenceKey = "Favourites";
 
-        private static FavouritesService? instance;
+        private static FavouritesService instance;
 
         private readonly List<FavouritesItem> favourites = new();
 

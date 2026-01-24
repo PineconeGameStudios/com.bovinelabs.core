@@ -13,8 +13,8 @@ namespace BovineLabs.Core.Editor.Inspectors
     /// <summary> Provides an inspector ([CustomPropertyDrawer(typeof(T))]) with custom element but will fall back to PropertyField if not overriden. </summary>
     public abstract class ElementProperty : PropertyDrawer
     {
-        private SerializedObject? serializedObject;
-        private VisualElement? parent;
+        private SerializedObject serializedObject;
+        private VisualElement parent;
 
         private static readonly Dictionary<SerializedProperty, object> Caches = new();
 
@@ -31,7 +31,7 @@ namespace BovineLabs.Core.Editor.Inspectors
 
         protected SerializedObject SerializedObject => this.serializedObject!;
 
-        protected SerializedProperty? RootProperty { get; private set; }
+        protected SerializedProperty RootProperty { get; private set; }
 
         /// <inheritdoc/>
         public sealed override VisualElement CreatePropertyGUI(SerializedProperty rootProperty)
@@ -128,7 +128,7 @@ namespace BovineLabs.Core.Editor.Inspectors
             return property.displayName;
         }
 
-        protected virtual VisualElement? CreateElement(SerializedProperty property)
+        protected virtual VisualElement CreateElement(SerializedProperty property)
         {
             return CreatePropertyField(property, this.SerializedObject);
         }

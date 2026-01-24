@@ -34,7 +34,7 @@ namespace BovineLabs.Core.Editor.Windows.Base
         }
 
         /// <summary>Occurs when the collection changes.</summary>
-        public event Action<IReadOnlyList<TItem>>? ItemsChanged;
+        public event Action<IReadOnlyList<TItem>> ItemsChanged;
 
         /// <summary>Gets the current items as a read-only list.</summary>
         public abstract IReadOnlyList<TItem> Items { get; }
@@ -148,7 +148,7 @@ namespace BovineLabs.Core.Editor.Windows.Base
             this.ItemsChanged?.Invoke(this.Items);
         }
 
-        protected static Object? TryGetAssetIfLoaded(string assetPath, List<Object> allObjects, Dictionary<string, Object> allPaths)
+        protected static Object TryGetAssetIfLoaded(string assetPath, List<Object> allObjects, Dictionary<string, Object> allPaths)
         {
             if (allPaths.TryGetValue(assetPath, out var loadedObject))
             {

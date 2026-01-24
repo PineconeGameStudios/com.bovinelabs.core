@@ -18,7 +18,7 @@ namespace BovineLabs.Core.Editor.EditorPreferences
         /// Initializes a new instance of the <see cref="CoreEditorPreferencesProvider"/> class.
         /// </summary>
         /// <param name="keywords">Additional keywords for searching.</param>
-        private CoreEditorPreferencesProvider(IEnumerable<string>? keywords = null)
+        private CoreEditorPreferencesProvider(IEnumerable<string> keywords = null)
             : base(PreferencesPath, SettingsScope.User, keywords)
         {
         }
@@ -28,7 +28,7 @@ namespace BovineLabs.Core.Editor.EditorPreferences
         /// </summary>
         /// <returns>The settings provider instance, or null if no preferences are available.</returns>
         [SettingsProvider]
-        public static SettingsProvider? GetPreferences()
+        public static SettingsProvider GetPreferences()
         {
             return HasAnyPreferences
                 ? new CoreEditorPreferencesProvider()

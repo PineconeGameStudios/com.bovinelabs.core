@@ -19,7 +19,7 @@ namespace BovineLabs.Core.Editor.Windows.SelectionHistory
     {
         public const string PreferenceKey = "Selection History";
 
-        private static SelectionHistoryService? instance;
+        private static SelectionHistoryService instance;
 
         private readonly List<SelectionHistoryItem> lockedItems = new();
         private readonly List<SelectionHistoryItem> normalItems = new();
@@ -242,7 +242,7 @@ namespace BovineLabs.Core.Editor.Windows.SelectionHistory
                 return;
             }
 
-            Object? activeObject = Selection.activeGameObject;
+            Object activeObject = Selection.activeGameObject;
             if (activeObject == null)
             {
                 activeObject = Selection.activeObject;

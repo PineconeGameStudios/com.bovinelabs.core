@@ -89,14 +89,14 @@ namespace BovineLabs.Core.Editor.Helpers
             }
         }
 
-        public static Type? GetFieldType(this SerializedProperty property)
+        public static Type GetFieldType(this SerializedProperty property)
         {
             var fi = GetFieldInfo(property);
             return fi?.FieldType ?? null;
         }
 
         // This only works on root objects.
-        public static FieldInfo? GetFieldInfo(this SerializedProperty property)
+        public static FieldInfo GetFieldInfo(this SerializedProperty property)
         {
             var parentType = property.serializedObject.targetObject.GetType();
             return parentType.GetFieldInBase(property.propertyPath);

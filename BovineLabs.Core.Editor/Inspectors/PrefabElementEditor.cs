@@ -13,7 +13,7 @@ namespace BovineLabs.Core.Editor.Inspectors
     /// <summary> A custom editor that will cause you to edit the source prefab instead of instances. </summary>
     public abstract class PrefabElementEditor : ElementEditor
     {
-        private SerializedObject? prefabObject;
+        private SerializedObject prefabObject;
 
         protected virtual bool AllowChangesIfNoPrefab => true;
 

@@ -20,7 +20,7 @@ namespace BovineLabs.Core.Editor.Windows.Favourites
         }
 
         public FavouritesItem(
-            UnityEngine.Object? obj, string name, string typeName, string assetPath, GlobalObjectId globalObjectId, Texture2D? icon, DateTime timestamp)
+            UnityEngine.Object obj, string name, string typeName, string assetPath, GlobalObjectId globalObjectId, Texture2D icon, DateTime timestamp)
             : base(obj, name, typeName, assetPath, globalObjectId, icon, timestamp)
         {
         }

@@ -19,8 +19,8 @@ namespace BovineLabs.Core.Editor.Windows.Favourites
     /// </summary>
     public sealed class FavouritesWindow : BaseObjectWindow<FavouritesItem, FavouritesService, FavouritesPreferences>
     {
-        private FavouritesService? favouritesService;
-        private VisualElement? dropLabel;
+        private FavouritesService favouritesService;
+        private VisualElement dropLabel;
 
         /// <inheritdoc/>
         protected override FavouritesService Service => this.favouritesService ?? FavouritesService.Instance;

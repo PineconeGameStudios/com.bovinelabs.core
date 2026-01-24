@@ -26,14 +26,14 @@ namespace BovineLabs.Core.Editor.Settings
         private readonly List<TreeViewItemData<IPanelOrGroup>> settingPanelGroups = new();
         private List<TreeViewItemData<IPanelOrGroup>> filteredSettingsPanel = new();
 
-        private VisualElement? contents;
-        private Label? contentTitle;
-        private IPanelOrGroup? currentSelection;
-        private TreeView? tree;
-        private ToolbarSearchField? searchField;
-        private VisualElement? splitter;
-        private VisualElement? toolbar;
-        private ToolbarToggle? toggleShowEmpty;
+        private VisualElement contents;
+        private Label contentTitle;
+        private IPanelOrGroup currentSelection;
+        private TreeView tree;
+        private ToolbarSearchField searchField;
+        private VisualElement splitter;
+        private VisualElement toolbar;
+        private ToolbarToggle toggleShowEmpty;
 
         private float splitterFlex = 0.2f;
 
@@ -41,7 +41,7 @@ namespace BovineLabs.Core.Editor.Settings
         {
             public string Name { get; }
 
-            ISettingsPanel? Panel { get; }
+            ISettingsPanel Panel { get; }
 
             bool MatchesFilter(string searchContext, bool showEmpty);
         }
@@ -120,7 +120,7 @@ namespace BovineLabs.Core.Editor.Settings
         {
         }
 
-        private static T? FindWindowByScope()
+        private static T FindWindowByScope()
         {
             return Resources.FindObjectsOfTypeAll<T>().FirstOrDefault();
         }
@@ -355,7 +355,7 @@ namespace BovineLabs.Core.Editor.Settings
 
             public string Name { get; }
 
-            public ISettingsPanel? Panel => null;
+            public ISettingsPanel Panel => null;
 
             public IReadOnlyList<ISettingsPanel> Panels { get; }
 

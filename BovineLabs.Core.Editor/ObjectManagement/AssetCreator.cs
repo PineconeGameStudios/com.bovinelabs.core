@@ -21,16 +21,16 @@ namespace BovineLabs.Core.Editor.ObjectManagement
 
     public class AssetCreator
     {
-        private readonly string? path;
+        private readonly string path;
         private readonly SerializedObject serializedObject;
         private readonly SerializedProperty serializedProperty;
         private readonly Type type;
         private readonly bool isAbstract;
         private readonly List<SearchView.Item> items = new();
 
-        private ListView? listView;
+        private ListView listView;
 
-        private AutoRefAttribute? attribute;
+        private AutoRefAttribute attribute;
 
         public AssetCreator(SerializedObject serializedObject, SerializedProperty serializedProperty, Type type)
         {
@@ -68,7 +68,7 @@ namespace BovineLabs.Core.Editor.ObjectManagement
 
         public PropertyField Element { get; }
 
-        private static AutoRefAttribute? TryGetAttribute(SerializedObject serializedObject, SerializedProperty serializedProperty, Type type)
+        private static AutoRefAttribute TryGetAttribute(SerializedObject serializedObject, SerializedProperty serializedProperty, Type type)
         {
             var attribute = type.GetCustomAttribute<AutoRefAttribute>();
 

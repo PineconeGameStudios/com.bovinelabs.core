@@ -60,7 +60,7 @@ namespace BovineLabs.Core.Editor.Windows.Base
         /// <summary>
         /// Event fired when any preference value changes.
         /// </summary>
-        public event Action? PreferencesChanged;
+        public event Action PreferencesChanged;
 
         /// <summary>
         /// Gets or sets the item height.

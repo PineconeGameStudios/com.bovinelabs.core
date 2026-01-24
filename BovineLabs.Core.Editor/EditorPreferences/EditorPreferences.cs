@@ -44,7 +44,7 @@ namespace BovineLabs.Core.Editor.EditorPreferences
         /// <param name="path">The path for the preferences in the settings window.</param>
         /// <param name="scope">The scope of the settings (User or Project).</param>
         /// <param name="keywords">Additional keywords for searching.</param>
-        protected EditorPreferences(string path, SettingsScope scope, IEnumerable<string>? keywords = null)
+        protected EditorPreferences(string path, SettingsScope scope, IEnumerable<string> keywords = null)
             : base(PathForScope(scope) + path, scope, Keywords.Concat(keywords ?? Array.Empty<string>()))
         {
             this.Title = path.Replace("/", " ");

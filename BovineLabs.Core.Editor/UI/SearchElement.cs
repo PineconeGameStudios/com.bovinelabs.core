@@ -77,7 +77,7 @@ namespace BovineLabs.Core.Editor.UI
             this.componentButton.text = defaultText;
         }
 
-        public event Action<SearchView.Item>? OnSelection;
+        public event Action<SearchView.Item> OnSelection;
 
         public Func<SearchView.Item, string> SetText { get; set; } = item => item.Name;
 

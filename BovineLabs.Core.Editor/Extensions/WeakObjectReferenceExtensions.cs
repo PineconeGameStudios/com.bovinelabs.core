@@ -10,7 +10,7 @@ namespace BovineLabs.Core.Editor.Extensions
 
     public static class WeakObjectReferenceExtensions
     {
-        public static T? GetEditorObject<T>(this WeakObjectReference<T> weakObjectReference)
+        public static T GetEditorObject<T>(this WeakObjectReference<T> weakObjectReference)
             where T : Object
         {
             return UntypedWeakReferenceId.GetEditorObject(weakObjectReference.Id) as T;

@@ -17,10 +17,10 @@ namespace BovineLabs.Core.Editor.Keys
     [CustomPropertyDrawer(typeof(KAttribute), true)]
     public class KAttributeDrawer : BitFieldAttributeEditor<KAttribute>
     {
-        private static Dictionary<string, Type>? kTypes;
+        private static Dictionary<string, Type> kTypes;
 
         /// <inheritdoc/>
-        protected override IEnumerable<(string Name, int Value)>? GetKeyValues(KAttribute attr)
+        protected override IEnumerable<(string Name, int Value)> GetKeyValues(KAttribute attr)
         {
             var type = TryGetType(attr.Settings);
             if (type == null)
@@ -70,7 +70,7 @@ namespace BovineLabs.Core.Editor.Keys
             return null;
         }
 
-        private static Type? TryGetType(string type)
+        private static Type TryGetType(string type)
         {
             if (kTypes == null)
             {

@@ -12,7 +12,7 @@ namespace BovineLabs.Core.Editor.Inspectors
     /// <summary> Provides a custom editor ([CustomEditor(typeof(T))]) with custom element but will fall back to PropertyField if not overriden. </summary>
     public abstract class ElementEditor : Editor
     {
-        private VisualElement? parent;
+        private VisualElement parent;
 
         protected VisualElement Parent => this.parent!;
 
@@ -61,7 +61,7 @@ namespace BovineLabs.Core.Editor.Inspectors
             return CreatePropertyField(property, property.serializedObject);
         }
 
-        protected virtual VisualElement? CreateElement(SerializedProperty property)
+        protected virtual VisualElement CreateElement(SerializedProperty property)
         {
             return CreatePropertyField(property, this.serializedObject);
         }

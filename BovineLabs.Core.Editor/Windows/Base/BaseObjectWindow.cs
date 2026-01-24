@@ -26,7 +26,7 @@ namespace BovineLabs.Core.Editor.Windows.Base
         where TPreferences : BaseDisplayPreferences, new()
     {
         private double lastClickTime;
-        private TItem? lastClickedItem;
+        private TItem lastClickedItem;
 
         protected List<TItem> FilteredItems { get; } = new();
 
@@ -34,15 +34,15 @@ namespace BovineLabs.Core.Editor.Windows.Base
 
         protected Toolbar Toolbar { get; private set; } = null!;
 
-        protected ToolbarSearchField? SearchField { get; private set; }
+        protected ToolbarSearchField SearchField { get; private set; }
 
-        protected ToolbarMenu? TypeFilterMenu { get; private set; }
+        protected ToolbarMenu TypeFilterMenu { get; private set; }
 
-        protected ToolbarMenu? SettingsMenu { get; private set; }
+        protected ToolbarMenu SettingsMenu { get; private set; }
 
-        protected Label? StatusLabel { get; private set; }
+        protected Label StatusLabel { get; private set; }
 
-        protected VisualElement? StatusBar { get; private set; }
+        protected VisualElement StatusBar { get; private set; }
 
         protected string CurrentSearchText { get; private set; } = string.Empty;
 
@@ -141,7 +141,7 @@ namespace BovineLabs.Core.Editor.Windows.Base
             return container;
         }
 
-        protected virtual Button? CreateListItemActionButton()
+        protected virtual Button CreateListItemActionButton()
         {
             return null;
         }
@@ -161,7 +161,7 @@ namespace BovineLabs.Core.Editor.Windows.Base
 
         protected abstract void CreateCustomSettingsMenuItems(DropdownMenu menu);
 
-        protected virtual VisualElement? MakeNoneElement()
+        protected virtual VisualElement MakeNoneElement()
         {
             return null;
         }
@@ -220,7 +220,7 @@ namespace BovineLabs.Core.Editor.Windows.Base
             this.UpdateStatusBarVisibility();
         }
 
-        protected TItem? GetItemAtPosition(Vector2 listLocalPosition)
+        protected TItem GetItemAtPosition(Vector2 listLocalPosition)
         {
             var scrollView = this.MainListView.Q<ScrollView>();
             if (scrollView == null)

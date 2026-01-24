@@ -25,7 +25,7 @@ namespace BovineLabs.Core.Editor.Dependency
         {
         }
 
-        protected World? World { get; private set; }
+        protected World World { get; private set; }
 
         protected VisualElement View { get; private set; } = null!;
 

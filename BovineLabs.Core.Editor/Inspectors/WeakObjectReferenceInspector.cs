@@ -17,8 +17,8 @@ namespace BovineLabs.Core.Editor.Inspectors
     internal abstract class WeakObjectReferenceInspector<T> : PropertyInspector<WeakObjectReference<T>>
         where T : Object
     {
-        private Foldout? field;
-        private ObjectField? objectField;
+        private Foldout field;
+        private ObjectField objectField;
 
         /// <inheritdoc/>
         public override VisualElement Build()
