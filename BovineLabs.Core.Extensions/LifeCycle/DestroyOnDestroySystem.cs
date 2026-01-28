@@ -5,6 +5,7 @@
 #if !BL_DISABLE_LIFECYCLE
 namespace BovineLabs.Core.LifeCycle
 {
+    using System;
     using Unity.Burst;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
@@ -113,8 +114,17 @@ namespace BovineLabs.Core.LifeCycle
 
             public void Execute()
             {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+                var unique = new NativeHashSet<Entity>(this.ToDestroy.Count, Allocator.Temp);
+#endif
                 while (this.ToDestroy.TryDequeue(out var entity))
                 {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+                    if (!unique.TryAdd(entity))
+                    {
+                        throw new Exception($"Entity {entity.ToFixedString()} was added to more than 1 LinkedEntityGroup. This is not allowed.");
+                    }
+#endif
                     this.DestroyEntitys.SetComponentEnabled(entity, true);
                 }
             }
