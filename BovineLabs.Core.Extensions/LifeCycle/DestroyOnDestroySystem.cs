@@ -7,8 +7,8 @@ namespace BovineLabs.Core.LifeCycle
 {
     using Unity.Burst;
     using Unity.Collections;
-    using Unity.Collections.LowLevel.Unsafe;
     using Unity.Entities;
+    using Unity.Jobs;
 
     /// <summary>
     /// Propagates destruction through LinkedEntityGroup hierarchies. When an entity with DestroyEntity enabled has a LinkedEntityGroup,
@@ -22,63 +22,21 @@ namespace BovineLabs.Core.LifeCycle
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            new DestroyJob
+            var disableChildEntities = new NativeQueue<Entity>(state.WorldUpdateAllocator);
+
+            state.Dependency = new DestroyJob
             {
-                DestroyEntitys = SystemAPI.GetComponentLookup<DestroyEntity>(),
+                ToDisable = disableChildEntities.AsParallelWriter(),
                 LinkedEntityGroups = SystemAPI.GetBufferLookup<LinkedEntityGroup>(),
+                DestroyEntitys = SystemAPI.GetComponentLookup<DestroyEntity>(true),
                 EntityStorageInfoLookup = SystemAPI.GetEntityStorageInfoLookup(),
-            }.ScheduleParallel();
-        }
+            }.ScheduleParallel(state.Dependency);
 
-        /// <summary>
-        /// Recursively propagates destruction through a LinkedEntityGroup hierarchy.
-        /// </summary>
-        /// <param name="linkedEntityGroup">The LinkedEntityGroup buffer to process.</param>
-        /// <param name="destroyEntities">Component lookup for DestroyEntity components.</param>
-        /// <param name="linkedEntityGroups">Buffer lookup for nested LinkedEntityGroup components.</param>
-        /// <param name="entityStorageInfoLookup">Entity storage info lookup for existence checks.</param>
-        public static void DestroyIterative(
-            DynamicBuffer<LinkedEntityGroup> linkedEntityGroup, ComponentLookup<DestroyEntity> destroyEntities,
-            BufferLookup<LinkedEntityGroup> linkedEntityGroups, EntityStorageInfoLookup entityStorageInfoLookup)
-        {
-            var leg = linkedEntityGroup.AsNativeArray();
-
-            // i >= 1 so we ignore ourselves
-            for (var i = leg.Length - 1; i >= 1; i--)
+            state.Dependency = new DisableChildEntitiesJob
             {
-                var entity = leg[i].Value;
-
-                if (entity.Index < 0 || !entityStorageInfoLookup.Exists(entity))
-                {
-                    // Entity has already been destroyed, just safely handle it so we don't have to care about ownership here
-                    linkedEntityGroup.RemoveAtSwapBack(i);
-                    continue;
-                }
-
-                // Check child has destroy component, if not we just let regular destroy handle it
-                var enabled = destroyEntities.GetEnabledRefRWOptional<DestroyEntity>(entity);
-                if (!enabled.IsValid)
-                {
-                    continue;
-                }
-
-                // Need to be removed from LEG so it can be handled by destroy system instead
-                linkedEntityGroup.RemoveAtSwapBack(i);
-
-                // Destroy already being handled, so we don't touch it as it will be iterated over at the top level
-                if (enabled.ValueRO)
-                {
-                    continue;
-                }
-
-                enabled.ValueRW = true;
-
-                // Propagate down
-                if (linkedEntityGroups.TryGetBuffer(entity, out var newLinkedEntityGroup))
-                {
-                    DestroyIterative(newLinkedEntityGroup, destroyEntities, linkedEntityGroups, entityStorageInfoLookup);
-                }
-            }
+                ToDisable = disableChildEntities,
+                DestroyEntitys = SystemAPI.GetComponentLookup<DestroyEntity>(),
+            }.Schedule(state.Dependency);
         }
 
         [BurstCompile]
@@ -86,18 +44,86 @@ namespace BovineLabs.Core.LifeCycle
         [WithAll(typeof(DestroyEntity))]
         private partial struct DestroyJob : IJobEntity
         {
-            [NativeDisableParallelForRestriction]
-            public ComponentLookup<DestroyEntity> DestroyEntitys;
+            public NativeQueue<Entity>.ParallelWriter ToDisable;
 
-            [NativeDisableContainerSafetyRestriction]
+            [NativeDisableParallelForRestriction]
             public BufferLookup<LinkedEntityGroup> LinkedEntityGroups;
+
+            [ReadOnly]
+            public ComponentLookup<DestroyEntity> DestroyEntitys;
 
             [ReadOnly]
             public EntityStorageInfoLookup EntityStorageInfoLookup;
 
             private void Execute(DynamicBuffer<LinkedEntityGroup> linkedEntityGroup)
             {
-                DestroyIterative(linkedEntityGroup, this.DestroyEntitys, this.LinkedEntityGroups, this.EntityStorageInfoLookup);
+                DestroyIterative(ref linkedEntityGroup, ref this.DestroyEntitys, ref this.LinkedEntityGroups, ref this.EntityStorageInfoLookup,
+                    ref this.ToDisable);
+            }
+
+            /// <summary>
+            /// Recursively propagates destruction through a LinkedEntityGroup hierarchy.
+            /// </summary>
+            private static void DestroyIterative(
+                ref DynamicBuffer<LinkedEntityGroup> linkedEntityGroup, ref ComponentLookup<DestroyEntity> destroyEntities,
+                ref BufferLookup<LinkedEntityGroup> linkedEntityGroups, ref EntityStorageInfoLookup entityStorageInfoLookup,
+                ref NativeQueue<Entity>.ParallelWriter toDisable)
+            {
+                var leg = linkedEntityGroup.AsNativeArray();
+
+                // i >= 1 so we ignore ourselves
+                for (var i = leg.Length - 1; i >= 1; i--)
+                {
+                    var entity = leg[i].Value;
+
+                    if (entity.Index < 0 || !entityStorageInfoLookup.Exists(entity))
+                    {
+                        // Entity has already been destroyed, just safely handle it so we don't have to care about ownership here
+                        linkedEntityGroup.RemoveAtSwapBack(i);
+                        continue;
+                    }
+
+                    // Check child has destroy component, if not we just let regular destroy handle it
+                    var enabled = destroyEntities.GetEnabledRefROOptional<DestroyEntity>(entity);
+                    if (!enabled.IsValid)
+                    {
+                        continue;
+                    }
+
+                    // Need to be removed from LEG so it can be handled by destroy system instead
+                    linkedEntityGroup.RemoveAtSwapBack(i);
+
+                    // Destroy already being handled, so we don't touch it as it will be iterated over at the top level
+                    if (enabled.ValueRO)
+                    {
+                        continue;
+                    }
+
+                    // enabled.ValueRW = true;
+                    toDisable.Enqueue(entity);
+
+                    // Propagate down
+                    if (linkedEntityGroups.TryGetBuffer(entity, out var newLinkedEntityGroup))
+                    {
+                        DestroyIterative(ref newLinkedEntityGroup, ref destroyEntities, ref linkedEntityGroups, ref entityStorageInfoLookup, ref toDisable);
+                    }
+                }
+            }
+        }
+
+        [BurstCompile]
+        private struct DisableChildEntitiesJob : IJob
+        {
+            public NativeQueue<Entity> ToDisable;
+
+            public ComponentLookup<DestroyEntity> DestroyEntitys;
+
+            public void Execute()
+            {
+                while (this.ToDisable.TryDequeue(out var entity))
+                {
+                    this.DestroyEntitys.SetComponentEnabled(entity, true);
+                }
             }
         }
     }
