@@ -7,6 +7,7 @@ namespace BovineLabs.Core.LifeCycle
 {
     using Unity.Burst;
     using Unity.Collections;
+    using Unity.Collections.LowLevel.Unsafe;
     using Unity.Entities;
     using Unity.Jobs;
 
@@ -22,19 +23,18 @@ namespace BovineLabs.Core.LifeCycle
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var disableChildEntities = new NativeQueue<Entity>(state.WorldUpdateAllocator);
+            var toDestroy = new NativeQueue<Entity>(state.WorldUpdateAllocator);
 
             state.Dependency = new DestroyJob
             {
-                ToDisable = disableChildEntities.AsParallelWriter(),
+                ToDestroy = toDestroy.AsParallelWriter(),
                 LinkedEntityGroups = SystemAPI.GetBufferLookup<LinkedEntityGroup>(),
                 DestroyEntitys = SystemAPI.GetComponentLookup<DestroyEntity>(true),
-                EntityStorageInfoLookup = SystemAPI.GetEntityStorageInfoLookup(),
             }.ScheduleParallel(state.Dependency);
 
-            state.Dependency = new DisableChildEntitiesJob
+            state.Dependency = new DestroyLinkedEntitiesJob
             {
-                ToDisable = disableChildEntities,
+                ToDestroy = toDestroy,
                 DestroyEntitys = SystemAPI.GetComponentLookup<DestroyEntity>(),
             }.Schedule(state.Dependency);
         }
@@ -44,30 +44,24 @@ namespace BovineLabs.Core.LifeCycle
         [WithAll(typeof(DestroyEntity))]
         private partial struct DestroyJob : IJobEntity
         {
-            public NativeQueue<Entity>.ParallelWriter ToDisable;
+            public NativeQueue<Entity>.ParallelWriter ToDestroy;
 
-            [NativeDisableParallelForRestriction]
+            [NativeDisableContainerSafetyRestriction]
             public BufferLookup<LinkedEntityGroup> LinkedEntityGroups;
 
             [ReadOnly]
             public ComponentLookup<DestroyEntity> DestroyEntitys;
 
-            [ReadOnly]
-            public EntityStorageInfoLookup EntityStorageInfoLookup;
-
             private void Execute(DynamicBuffer<LinkedEntityGroup> linkedEntityGroup)
             {
-                DestroyIterative(ref linkedEntityGroup, ref this.DestroyEntitys, ref this.LinkedEntityGroups, ref this.EntityStorageInfoLookup,
-                    ref this.ToDisable);
+                this.DestroyIterative(ref linkedEntityGroup);
             }
 
             /// <summary>
             /// Recursively propagates destruction through a LinkedEntityGroup hierarchy.
             /// </summary>
-            private static void DestroyIterative(
-                ref DynamicBuffer<LinkedEntityGroup> linkedEntityGroup, ref ComponentLookup<DestroyEntity> destroyEntities,
-                ref BufferLookup<LinkedEntityGroup> linkedEntityGroups, ref EntityStorageInfoLookup entityStorageInfoLookup,
-                ref NativeQueue<Entity>.ParallelWriter toDisable)
+            private void DestroyIterative(
+                ref DynamicBuffer<LinkedEntityGroup> linkedEntityGroup)
             {
                 var leg = linkedEntityGroup.AsNativeArray();
 
@@ -76,7 +70,7 @@ namespace BovineLabs.Core.LifeCycle
                 {
                     var entity = leg[i].Value;
 
-                    if (entity.Index < 0 || !entityStorageInfoLookup.Exists(entity))
+                    if (entity.Index < 0 || !this.DestroyEntitys.EntityExists(entity))
                     {
                         // Entity has already been destroyed, just safely handle it so we don't have to care about ownership here
                         linkedEntityGroup.RemoveAtSwapBack(i);
@@ -84,7 +78,7 @@ namespace BovineLabs.Core.LifeCycle
                     }
 
                     // Check child has destroy component, if not we just let regular destroy handle it
-                    var enabled = destroyEntities.GetEnabledRefROOptional<DestroyEntity>(entity);
+                    var enabled = this.DestroyEntitys.GetEnabledRefROOptional<DestroyEntity>(entity);
                     if (!enabled.IsValid)
                     {
                         continue;
@@ -99,28 +93,27 @@ namespace BovineLabs.Core.LifeCycle
                         continue;
                     }
 
-                    // enabled.ValueRW = true;
-                    toDisable.Enqueue(entity);
+                    this.ToDestroy.Enqueue(entity);
 
                     // Propagate down
-                    if (linkedEntityGroups.TryGetBuffer(entity, out var newLinkedEntityGroup))
+                    if (this.LinkedEntityGroups.TryGetBuffer(entity, out var newLinkedEntityGroup))
                     {
-                        DestroyIterative(ref newLinkedEntityGroup, ref destroyEntities, ref linkedEntityGroups, ref entityStorageInfoLookup, ref toDisable);
+                        this.DestroyIterative(ref newLinkedEntityGroup);
                     }
                 }
             }
         }
 
         [BurstCompile]
-        private struct DisableChildEntitiesJob : IJob
+        private struct DestroyLinkedEntitiesJob : IJob
         {
-            public NativeQueue<Entity> ToDisable;
+            public NativeQueue<Entity> ToDestroy;
 
             public ComponentLookup<DestroyEntity> DestroyEntitys;
 
             public void Execute()
             {
-                while (this.ToDisable.TryDequeue(out var entity))
+                while (this.ToDestroy.TryDequeue(out var entity))
                 {
                     this.DestroyEntitys.SetComponentEnabled(entity, true);
                 }
