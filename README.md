@@ -24,6 +24,7 @@ Once installed, the library provides utilities, custom containers, and high-perf
 | [Facets](Documentation~/Facets.md)                               | Source-generated `IFacet` helpers that provide aspect-like access via lookups and chunk iteration                                     |
 | [Extensions](Documentation~/Extensions.md)                       | Extension methods that enhance Unity's DOTS APIs with performance optimizations and convenience methods                               |
 | [Functions](Documentation~/Functions.md)                         | Extensible way to add support for extending jobs to other developers or modders                                                       |
+| [Inspectors](Documentation~/Inspectors.md)                       | UI Toolkit base classes for custom editors and property drawers with prefab-aware variants and fallback field rendering               |
 | [Iterators](Documentation~/Iterators.md)                         | High-performance iterator utilities for ECS applications with Burst-compatible enumeration capabilities                               |
 | [Jobs](Documentation~/Jobs.md)                                   | Custom jobs (IJobForThread, IJobParallelForDeferBatch, IJobHashMapDefer, IJobParallelHashMapDefer)                                    |
 | [K](Documentation~/K.md)                                         | K is a type-safe, Burst-compatible alternative to Enums and LayerMasks that allows you to define key-value pairs in settings files    |
