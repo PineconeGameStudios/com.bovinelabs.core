@@ -28,6 +28,8 @@ namespace BovineLabs.Testing
 
         protected BlobAssetStore BlobAssetStore { get; private set; }
 
+        protected virtual bool IsEditModeTest => true;
+
         [SetUp]
         public virtual void Setup()
         {
@@ -36,7 +38,7 @@ namespace BovineLabs.Testing
             PlayerLoop.SetPlayerLoop(PlayerLoop.GetDefaultPlayerLoop());
 
             this.previousWorld = World.DefaultGameObjectInjectionWorld;
-            this.world = World.DefaultGameObjectInjectionWorld = new World("Test World");
+            this.world = World.DefaultGameObjectInjectionWorld = new World("Test World", this.IsEditModeTest ? WorldFlags.Editor : WorldFlags.Game);
             this.World.UpdateAllocatorEnableBlockFree = true;
             this.Manager = this.World.EntityManager;
             this.ManagerDebug = new EntityManager.EntityManagerDebug(this.Manager);
