@@ -22,6 +22,7 @@ namespace BovineLabs.Core.Iterators
         internal int OffsetsOffset;
         internal int SizesOffset;
         internal int TypesOffset;
+        internal int AlignmentsOffset;
         internal int DataOffset;
         internal int Count;
         internal int Capacity;
@@ -73,6 +74,17 @@ namespace BovineLabs.Core.Iterators
             }
         }
 
+        internal byte* Alignments
+        {
+            get
+            {
+                fixed (DynamicUntypedBufferHelper* data = &this)
+                {
+                    return (byte*)data + data->AlignmentsOffset;
+                }
+            }
+        }
+
         internal readonly bool IsEmpty
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -87,7 +99,14 @@ namespace BovineLabs.Core.Iterators
             capacity = CalcCapacityCeilPow2(0, capacity, log2MinGrowth);
             dataCapacity = CalcCapacityCeilPow2(0, dataCapacity, log2MinGrowth);
 
-            var totalSize = CalculateDataSize(capacity, dataCapacity, out var offsetsOffset, out var sizesOffset, out var typesOffset, out var dataOffset);
+            var totalSize = CalculateDataSize(
+                capacity,
+                dataCapacity,
+                out var offsetsOffset,
+                out var sizesOffset,
+                out var typesOffset,
+                out var alignmentsOffset,
+                out var dataOffset);
 
             var bufferDataSize = sizeof(DynamicUntypedBufferHelper);
             buffer.ResizeUninitialized(bufferDataSize + totalSize);
@@ -103,6 +122,7 @@ namespace BovineLabs.Core.Iterators
             data->OffsetsOffset = bufferDataSize + offsetsOffset;
             data->SizesOffset = bufferDataSize + sizesOffset;
             data->TypesOffset = bufferDataSize + typesOffset;
+            data->AlignmentsOffset = bufferDataSize + alignmentsOffset;
             data->DataOffset = bufferDataSize + dataOffset;
         }
 
@@ -115,7 +135,13 @@ namespace BovineLabs.Core.Iterators
 
             Assert.IsTrue(newCapacity > data->Capacity);
 
-            var totalSize = CalculateDataSize(newCapacity, data->DataCapacity, out var offsetsOffset, out var sizesOffset, out var typesOffset,
+            var totalSize = CalculateDataSize(
+                newCapacity,
+                data->DataCapacity,
+                out var offsetsOffset,
+                out var sizesOffset,
+                out var typesOffset,
+                out var alignmentsOffset,
                 out var dataOffset);
 
             var oldCapacity = data->Capacity;
@@ -127,6 +153,7 @@ namespace BovineLabs.Core.Iterators
             var oldOffsets = (int*)UnsafeUtility.Malloc(oldCapacity * sizeof(int), UnsafeUtility.AlignOf<int>(), Allocator.Temp);
             var oldSizes = (int*)UnsafeUtility.Malloc(oldCapacity * sizeof(int), UnsafeUtility.AlignOf<int>(), Allocator.Temp);
             var oldTypes = (int*)UnsafeUtility.Malloc(oldCapacity * sizeof(int), UnsafeUtility.AlignOf<int>(), Allocator.Temp);
+            var oldAlignments = (byte*)UnsafeUtility.Malloc(oldCapacity * sizeof(byte), UnsafeUtility.AlignOf<byte>(), Allocator.Temp);
             var oldData = (byte*)UnsafeUtility.Malloc(oldDataAllocatedIndex, UnsafeUtility.AlignOf<byte>(), Allocator.Temp);
 
             if (oldCapacity > 0)
@@ -134,6 +161,7 @@ namespace BovineLabs.Core.Iterators
                 UnsafeUtility.MemCpy(oldOffsets, data->Offsets, oldCapacity * sizeof(int));
                 UnsafeUtility.MemCpy(oldSizes, data->Sizes, oldCapacity * sizeof(int));
                 UnsafeUtility.MemCpy(oldTypes, data->Types, oldCapacity * sizeof(int));
+                UnsafeUtility.MemCpy(oldAlignments, data->Alignments, oldCapacity * sizeof(byte));
             }
 
             if (oldDataAllocatedIndex > 0)
@@ -154,6 +182,7 @@ namespace BovineLabs.Core.Iterators
             data->OffsetsOffset = bufferDataSize + offsetsOffset;
             data->SizesOffset = bufferDataSize + sizesOffset;
             data->TypesOffset = bufferDataSize + typesOffset;
+            data->AlignmentsOffset = bufferDataSize + alignmentsOffset;
             data->DataOffset = bufferDataSize + dataOffset;
 
             if (oldCapacity > 0)
@@ -161,6 +190,7 @@ namespace BovineLabs.Core.Iterators
                 UnsafeUtility.MemCpy(data->Offsets, oldOffsets, oldCapacity * sizeof(int));
                 UnsafeUtility.MemCpy(data->Sizes, oldSizes, oldCapacity * sizeof(int));
                 UnsafeUtility.MemCpy(data->Types, oldTypes, oldCapacity * sizeof(int));
+                UnsafeUtility.MemCpy(data->Alignments, oldAlignments, oldCapacity * sizeof(byte));
             }
 
             if (oldDataAllocatedIndex > 0)
@@ -204,7 +234,10 @@ namespace BovineLabs.Core.Iterators
             data->CheckIndexOutOfBounds(idx);
 
             var size = sizeof(TValue);
-            var dataAllocatedIndex = CollectionHelper.Align(data->DataAllocatedIndex, sizeof(int));
+            var align = UnsafeUtility.AlignOf<TValue>();
+            Check.Assume((align & (align - 1)) == 0, "Alignment must be power-of-two.");
+            Check.Assume(align <= byte.MaxValue, "Alignment exceeds byte storage.");
+            var dataAllocatedIndex = AlignDataIndex(data, data->DataAllocatedIndex, align);
             var minNewCapacity = dataAllocatedIndex + size;
 
             if (minNewCapacity > data->DataCapacity)
@@ -225,6 +258,7 @@ namespace BovineLabs.Core.Iterators
             data->Offsets[idx] = dataAllocatedIndex;
             data->Sizes[idx] = size;
             data->Types[idx] = BurstRuntime.GetHashCode32<TValue>();
+            data->Alignments[idx] = (byte)align;
             data->DataAllocatedIndex = dataAllocatedIndex + size;
 
             return idx;
@@ -263,6 +297,7 @@ namespace BovineLabs.Core.Iterators
             var offsets = data->Offsets;
             var sizes = data->Sizes;
             var types = data->Types;
+            var alignments = data->Alignments;
 
             var moveCount = count - index - 1;
             if (moveCount > 0)
@@ -270,6 +305,7 @@ namespace BovineLabs.Core.Iterators
                 UnsafeUtility.MemMove(offsets + index, offsets + index + 1, moveCount * sizeof(int));
                 UnsafeUtility.MemMove(sizes + index, sizes + index + 1, moveCount * sizeof(int));
                 UnsafeUtility.MemMove(types + index, types + index + 1, moveCount * sizeof(int));
+                UnsafeUtility.MemMove(alignments + index, alignments + index + 1, moveCount * sizeof(byte));
             }
 
             data->Count = count - 1;
@@ -282,7 +318,7 @@ namespace BovineLabs.Core.Iterators
             var dataIndex = 0;
             for (var i = 0; i < data->Count; ++i)
             {
-                dataIndex = CollectionHelper.Align(dataIndex, sizeof(int));
+                dataIndex = AlignDataIndex(data, dataIndex, alignments[i]);
 
                 var size = sizes[i];
                 var oldOffset = offsets[i];
@@ -318,19 +354,40 @@ namespace BovineLabs.Core.Iterators
         }
 
         private static int CalculateDataSize(
-            int capacity, int dataCapacity, out int offsetsOffset, out int sizesOffset, out int typesOffset, out int dataOffset)
+            int capacity, int dataCapacity, out int offsetsOffset, out int sizesOffset, out int typesOffset, out int alignmentsOffset,
+            out int dataOffset)
         {
             var sizeOfInt = sizeof(int);
             var offsetsSize = sizeOfInt * capacity;
             var sizesSize = sizeOfInt * capacity;
             var typesSize = sizeOfInt * capacity;
+            var alignmentsSize = sizeof(byte) * capacity;
 
             offsetsOffset = 0;
             sizesOffset = CollectionHelper.Align(offsetsOffset + offsetsSize, sizeOfInt);
             typesOffset = CollectionHelper.Align(sizesOffset + sizesSize, sizeOfInt);
-            dataOffset = CollectionHelper.Align(typesOffset + typesSize, sizeOfInt);
+            alignmentsOffset = CollectionHelper.Align(typesOffset + typesSize, sizeOfInt);
+            dataOffset = CollectionHelper.Align(alignmentsOffset + alignmentsSize, 16);
 
             return dataOffset + dataCapacity;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int AlignDataIndex(DynamicUntypedBufferHelper* data, int dataIndex, int align)
+        {
+            if (align <= 1)
+            {
+                return dataIndex;
+            }
+
+            // Alignment must be applied against absolute addresses, not just offsets.
+            var dataMisalignment = (int)((ulong)data->Data & (ulong)(align - 1));
+            if (dataMisalignment == 0)
+            {
+                return CollectionHelper.Align(dataIndex, align);
+            }
+
+            return CollectionHelper.Align(dataIndex + dataMisalignment, align) - dataMisalignment;
         }
 
         [Conditional("ENABLE_UNITY_COLLECTIONS_CHECKS")]
