@@ -237,10 +237,7 @@ namespace BovineLabs.Core.Utility
             where T : Attribute
         {
 #if UNITY_EDITOR
-            using (new ProfilerMarker("GetMethodsWithAttribute").Auto())
-            {
-                return TypeCache.GetMethodsWithAttribute<T>();
-            }
+            return TypeCache.GetMethodsWithAttribute<T>();
 #else
             var attributeType = typeof(T);
             var coreAssembly = attributeType.Assembly;

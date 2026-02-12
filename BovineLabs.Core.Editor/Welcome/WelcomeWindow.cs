@@ -433,7 +433,7 @@ namespace BovineLabs.Core.Editor.Welcome
             {
                 if (!this.packageLookup.TryGetValue(dependencyName, out var dependency))
                 {
-                    BLGlobalLogger.LogWarning($"Unable to find dependency \"{dependencyName}\" for {package.PackageName}.");
+                    BLGlobalLogger.LogWarningString($"Unable to find dependency \"{dependencyName}\" for {package.PackageName}.");
                     continue;
                 }
 

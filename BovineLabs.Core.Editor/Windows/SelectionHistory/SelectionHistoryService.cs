@@ -179,7 +179,7 @@ namespace BovineLabs.Core.Editor.Windows.SelectionHistory
             }
             catch (Exception ex)
             {
-                BLGlobalLogger.LogWarning($"Failed to save selection history: {ex.Message}");
+                BLGlobalLogger.LogWarningString($"Failed to save selection history: {ex.Message}");
             }
         }
 
@@ -224,7 +224,7 @@ namespace BovineLabs.Core.Editor.Windows.SelectionHistory
             }
             catch (Exception ex)
             {
-                BLGlobalLogger.LogWarning($"Failed to load selection history: {ex.Message}");
+                BLGlobalLogger.LogWarningString($"Failed to load selection history: {ex.Message}");
             }
         }
 

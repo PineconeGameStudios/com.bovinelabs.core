@@ -23,7 +23,7 @@ namespace BovineLabs.Core.Authoring.ObjectManagement
     {
         private static readonly Dictionary<GameObject, ObjectInstantiate> PreviewInstantiateMap = new();
 
-        [ConfigVar("core.instantiate-replace", true, "Should object definition targets be replaced when dropping in scene")]
+        [ConfigVar("core.instantiate-replace", false, "Should object definition targets be replaced when dropping in scene")]
         private static readonly SharedStatic<bool> Replace = SharedStatic<bool>.GetOrCreate<ReplaceType>();
 
         private ObjectDefinitionAuthoring? preview;
@@ -176,6 +176,11 @@ namespace BovineLabs.Core.Authoring.ObjectManagement
 #else
                 var newGameObject = (GameObject)EditorUtility.EntityIdToObject(createGameObjectHierarchyEvent.instanceId);
 #endif
+                if (newGameObject == null)
+                {
+                    continue;
+                }
+
                 TryReplace(newGameObject);
             }
         }
