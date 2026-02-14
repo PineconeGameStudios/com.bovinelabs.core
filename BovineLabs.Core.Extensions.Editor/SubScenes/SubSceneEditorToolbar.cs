@@ -19,6 +19,7 @@ namespace BovineLabs.Core.Editor.SubScenes
     using Unity.Scenes;
     using Unity.Scenes.Editor;
     using UnityEditor;
+    using UnityEditor.Compilation;
     using UnityEditor.SceneManagement;
     using UnityEditor.Toolbars;
     using UnityEngine;
@@ -47,6 +48,7 @@ namespace BovineLabs.Core.Editor.SubScenes
             ConfigVarManager.Initialize();
             SceneManager.sceneLoaded += (_, _) => CleanupOldSubScenes();
             EditorApplication.playModeStateChanged += SceneOnPlayModeStatusChanged;
+            CompilationPipeline.compilationStarted += OnCompilationStarted;
         }
 
         private delegate bool AddSetDelegate<in T>(T dropDown, SubSceneSetBase set, string setPath)
@@ -88,18 +90,30 @@ namespace BovineLabs.Core.Editor.SubScenes
                     MainToolbar.Refresh(SceneSetPath);
                     break;
                 case PlayModeStateChange.ExitingEditMode:
-                    foreach (var s in EditorSubScenes)
-                    {
-                        if (s.Value)
-                        {
-                            SubSceneInspectorUtility.CloseAndAskSaveIfUserWantsTo(s.Value);
-                            Object.DestroyImmediate(s.Value.gameObject);
-                        }
-                    }
-
-                    EditorSubScenes.Clear();
+                    CleanupSubScenes();
                     break;
             }
+        }
+
+        private static void OnCompilationStarted(object obj)
+        {
+            CleanupSubScenes();
+        }
+
+        private static void CleanupSubScenes()
+        {
+            foreach (var s in EditorSubScenes)
+            {
+                if (!s.Value)
+                {
+                    continue;
+                }
+
+                SubSceneInspectorUtility.CloseAndAskSaveIfUserWantsTo(s.Value);
+                Object.DestroyImmediate(s.Value.gameObject);
+            }
+
+            EditorSubScenes.Clear();
         }
 
         private static void CleanupOldSubScenes()
@@ -275,28 +289,31 @@ namespace BovineLabs.Core.Editor.SubScenes
                     EditorSceneManager.CloseScene(scenePath, true);
                 }
 
-                if (!EditorSubScenes.TryGetValue(scene, out var subScene) || !subScene)
+                if (AlreadyExists(scene))
                 {
-                    foreach (var subscene in Object.FindObjectsByType<SubScene>(FindObjectsSortMode.None))
-                    {
-                        if (subscene.SceneAsset == scene)
-                        {
-                            subScene = subscene;
-                            break;
-                        }
-                    }
-
-                    if (!subScene)
-                    {
-                        var go = new GameObject { hideFlags = HideFlags.DontSave };
-                        subScene = go.AddComponent<SubScene>();
-                        subScene.SceneAsset = scene;
-                        EditorSubScenes[scene] = subScene;
-                    }
+                    return;
                 }
+
+                var go = new GameObject { hideFlags = HideFlags.DontSaveInEditor };
+                var subScene = go.AddComponent<SubScene>();
+                subScene.SceneAsset = scene;
+                EditorSubScenes[scene] = subScene;
 
                 SubSceneUtility.EditScene(subScene);
             }, scene);
+        }
+
+        private static bool AlreadyExists(SceneAsset scene)
+        {
+            foreach (var subscene in Object.FindObjectsByType<SubScene>(FindObjectsSortMode.None))
+            {
+                if (subscene.SceneAsset == scene)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void LivingBakingDropdown<T>(T menu)
