@@ -140,16 +140,16 @@ namespace BovineLabs.Core.Editor.SubScenes
             {
                 if (baking)
                 {
-                    SceneSelectionDropDown(dropDown, (_, _, _) => true, AddSceneBake);
+                    SceneSelectionDropDown(dropDown, true, (_, _, _) => true, AddSceneBake);
                 }
                 else
                 {
-                    SceneSelectionDropDown(dropDown, AddSetOpen, AddSceneOpen);
+                    SceneSelectionDropDown(dropDown, false, AddSetOpen, AddSceneOpen);
                 }
             }
         }
 
-        private static void SceneSelectionDropDown<T>(T dropDown, AddSetDelegate<T> addSet, AddSceneDelegate<T> addScene)
+        private static void SceneSelectionDropDown<T>(T dropDown, bool isBaking, AddSetDelegate<T> addSet, AddSceneDelegate<T> addScene)
             where T : IDropDown
         {
             var settings = EditorSettingsUtility.GetSettings<SubSceneSettings>();
@@ -172,13 +172,14 @@ namespace BovineLabs.Core.Editor.SubScenes
                     continue;
                 }
 
-                var scenes = set
-                    .Scenes
-                    .Where(scene => scene)
-                    .Concat(EditorBuildSettings.scenes.Select(s => AssetDatabase.LoadAssetAtPath<SceneAsset>(s.path)))
-                    .Distinct()
-                    .Where(sa => sa)
-                    .OrderBy(sa => sa.name);
+                var scenes = set.Scenes.Where(scene => scene);
+
+                if (!isBaking)
+                {
+                    scenes = scenes.Concat(EditorBuildSettings.scenes.Select(s => AssetDatabase.LoadAssetAtPath<SceneAsset>(s.path)));
+                }
+
+                scenes = scenes.Distinct().Where(sa => sa).OrderBy(sa => sa.name);
 
                 foreach (var scene in scenes)
                 {
