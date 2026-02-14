@@ -5,6 +5,7 @@
 #if !BL_DISABLE_SUBSCENE
 namespace BovineLabs.Core.Editor.SubScenes
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using BovineLabs.Core.Authoring.SubScenes;
@@ -48,7 +49,6 @@ namespace BovineLabs.Core.Editor.SubScenes
             ConfigVarManager.Initialize();
             SceneManager.sceneLoaded += (_, _) => CleanupOldSubScenes();
             EditorApplication.playModeStateChanged += SceneOnPlayModeStatusChanged;
-            CompilationPipeline.compilationStarted += OnCompilationStarted;
         }
 
         private delegate bool AddSetDelegate<in T>(T dropDown, SubSceneSetBase set, string setPath)
@@ -93,11 +93,6 @@ namespace BovineLabs.Core.Editor.SubScenes
                     CleanupSubScenes();
                     break;
             }
-        }
-
-        private static void OnCompilationStarted(object obj)
-        {
-            CleanupSubScenes();
         }
 
         private static void CleanupSubScenes()
@@ -270,6 +265,11 @@ namespace BovineLabs.Core.Editor.SubScenes
             var sceneName = scene.name.ToSentence();
             dropDown.AddItem($"{setName}/{sceneName}", false, _ =>
             {
+                if (AlreadyExists(scene))
+                {
+                    return;
+                }
+
                 // If it's already open, we have to close it before converting it
                 if (EditorSceneUtil.IsSceneAssetOpen(scene))
                 {
@@ -289,14 +289,13 @@ namespace BovineLabs.Core.Editor.SubScenes
                     EditorSceneManager.CloseScene(scenePath, true);
                 }
 
-                if (AlreadyExists(scene))
-                {
-                    return;
-                }
-
                 var go = new GameObject { hideFlags = HideFlags.DontSaveInEditor };
                 var subScene = go.AddComponent<SubScene>();
                 subScene.SceneAsset = scene;
+                var goc = go.AddComponent<GameObjectCleanup>();
+                goc.IsActive = true;
+                goc.hideFlags = HideFlags.HideInInspector;
+
                 EditorSubScenes[scene] = subScene;
 
                 SubSceneUtility.EditScene(subScene);
@@ -305,9 +304,24 @@ namespace BovineLabs.Core.Editor.SubScenes
 
         private static bool AlreadyExists(SceneAsset scene)
         {
-            foreach (var subscene in Object.FindObjectsByType<SubScene>(FindObjectsSortMode.None))
+            var subScenes = Object.FindObjectsByType<SubScene>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+            foreach (var subscene in subScenes)
             {
                 if (subscene.SceneAsset == scene)
+                {
+                    return true;
+                }
+            }
+
+            foreach (var es in EditorSubScenes)
+            {
+                if (!es.Value)
+                {
+                    continue;
+                }
+
+                if (es.Key == scene)
                 {
                     return true;
                 }
