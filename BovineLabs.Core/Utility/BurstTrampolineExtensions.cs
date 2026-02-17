@@ -1,4 +1,4 @@
-// <copyright file="BurstManagedCallWrapperExtensions.cs" company="BovineLabs">
+// <copyright file="BurstTrampolineExtensions.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
@@ -27,22 +27,22 @@ namespace BovineLabs.Core.Utility
         public TThird Third;
     }
 
-    public static class BurstManagedCallWrapperExtensions
+    public static class BurstTrampolineExtensions
     {
-        public static void Invoke(this BurstManagedCallWrapper wrapper)
+        public static void Invoke(this BurstTrampoline wrapper)
         {
             var arguments = default(BurstManagedNoArgs);
             wrapper.Invoke(ref arguments);
         }
 
-        public static void Invoke<T>(this BurstManagedCallWrapper wrapper, in T value)
+        public static void Invoke<T>(this BurstTrampoline wrapper, in T value)
             where T : unmanaged
         {
             var arguments = value;
             wrapper.Invoke(ref arguments);
         }
 
-        public static void Invoke<TFirst, TSecond>(this BurstManagedCallWrapper wrapper, in TFirst first, in TSecond second)
+        public static void Invoke<TFirst, TSecond>(this BurstTrampoline wrapper, in TFirst first, in TSecond second)
             where TFirst : unmanaged
             where TSecond : unmanaged
         {
@@ -50,7 +50,7 @@ namespace BovineLabs.Core.Utility
             wrapper.Invoke(ref arguments);
         }
 
-        public static void Invoke<TFirst, TSecond, TThird>(this BurstManagedCallWrapper wrapper, in TFirst first, in TSecond second, in TThird third)
+        public static void Invoke<TFirst, TSecond, TThird>(this BurstTrampoline wrapper, in TFirst first, in TSecond second, in TThird third)
             where TFirst : unmanaged
             where TSecond : unmanaged
             where TThird : unmanaged
@@ -59,14 +59,14 @@ namespace BovineLabs.Core.Utility
             wrapper.Invoke(ref arguments);
         }
 
-        public static void InvokeOut<TOut>(this BurstManagedCallWrapper wrapper, out TOut value)
+        public static void InvokeOut<TOut>(this BurstTrampoline wrapper, out TOut value)
             where TOut : unmanaged
         {
             value = default;
             wrapper.Invoke(ref value);
         }
 
-        public static void InvokeOut<TIn, TOut>(this BurstManagedCallWrapper wrapper, in TIn input, out TOut value)
+        public static void InvokeOut<TIn, TOut>(this BurstTrampoline wrapper, in TIn input, out TOut value)
             where TIn : unmanaged
             where TOut : unmanaged
         {
@@ -75,7 +75,7 @@ namespace BovineLabs.Core.Utility
             value = arguments.Second;
         }
 
-        public static void InvokeOut<TFirst, TSecond, TOut>(this BurstManagedCallWrapper wrapper, in TFirst first, in TSecond second, out TOut value)
+        public static void InvokeOut<TFirst, TSecond, TOut>(this BurstTrampoline wrapper, in TFirst first, in TSecond second, out TOut value)
             where TFirst : unmanaged
             where TSecond : unmanaged
             where TOut : unmanaged
