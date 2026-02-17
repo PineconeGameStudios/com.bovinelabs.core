@@ -34,6 +34,11 @@ namespace BovineLabs.Core
         [ConfigVar("network.require-connection-approval", false, "Is connection approval required to connect to a netcode service", true)]
         public static readonly SharedStatic<bool> RequireConnectionApproval = SharedStatic<bool>.GetOrCreate<RequireConnectionApprovalType>();
 
+#if NETCODE_EXPERIMENTAL_SINGLE_WORLD_HOST && !UNITY_CLIENT && !UNITY_SERVER
+        [ConfigVar("network.host-mode-override", -1, "Override the HostWorldModeSelection. < 0 is ignore, 0 is separate client/server worlds, > 0 is single host world.", true)]
+        public static readonly SharedStatic<int> HostModeOverride = SharedStatic<int>.GetOrCreate<HostModeOverrideType>();
+#endif
+
         /// <summary> Creates the client and server world as long as we aren't dedicated. </summary>
         /// <exception cref="InvalidOperationException"> If there is already a server or client world. </exception>
         /// <param name="isLocal"> Should the game be local. </param>
@@ -42,8 +47,10 @@ namespace BovineLabs.Core
             var requestedPlayType = RequestedPlayType;
 
 #if NETCODE_EXPERIMENTAL_SINGLE_WORLD_HOST && !UNITY_CLIENT && !UNITY_SERVER
-            if (NetCodeConfig.Global != null && NetCodeConfig.Global.HostWorldModeSelection == NetCodeConfig.HostWorldMode.SingleWorld &&
-                requestedPlayType == PlayType.ClientAndServer)
+            var useHostWorld = HostModeOverride.Data != 0 && NetCodeConfig.Global != null && requestedPlayType == PlayType.ClientAndServer &&
+                (NetCodeConfig.Global.HostWorldModeSelection == NetCodeConfig.HostWorldMode.SingleWorld || HostModeOverride.Data > 0);
+
+            if (useHostWorld)
             {
                 this.CreateSingleWorldHost(isLocal);
             }
@@ -248,6 +255,10 @@ namespace BovineLabs.Core
         }
 
         private struct RequireConnectionApprovalType
+        {
+        }
+
+        private struct HostModeOverrideType
         {
         }
     }
