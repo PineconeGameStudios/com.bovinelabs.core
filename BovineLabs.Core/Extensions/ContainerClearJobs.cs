@@ -46,6 +46,18 @@ namespace BovineLabs.Core.Extensions
     }
 
     [BurstCompile]
+    public struct ClearNativeHashSetJob<TKey> : IJob
+        where TKey : unmanaged, IEquatable<TKey>
+    {
+        public NativeHashSet<TKey> HashSet;
+
+        public void Execute()
+        {
+            this.HashSet.Clear();
+        }
+    }
+
+    [BurstCompile]
     public struct ClearNativeHashMapJob<TKey, TValue> : IJob
         where TKey : unmanaged, IEquatable<TKey>
         where TValue : unmanaged
