@@ -20,7 +20,6 @@ namespace BovineLabs.Core.Editor.SubScenes
     using Unity.Scenes;
     using Unity.Scenes.Editor;
     using UnityEditor;
-    using UnityEditor.Compilation;
     using UnityEditor.SceneManagement;
     using UnityEditor.Toolbars;
     using UnityEngine;
@@ -290,7 +289,12 @@ namespace BovineLabs.Core.Editor.SubScenes
                     EditorSceneManager.CloseScene(scenePath, true);
                 }
 
-                var go = new GameObject { hideFlags = HideFlags.DontSaveInEditor };
+                var go = new GameObject
+                {
+                    hideFlags = HideFlags.DontSaveInEditor,
+                    name = scene.name,
+                };
+
                 var subScene = go.AddComponent<SubScene>();
                 subScene.SceneAsset = scene;
                 var goc = go.AddComponent<GameObjectCleanup>();
@@ -424,7 +428,8 @@ namespace BovineLabs.Core.Editor.SubScenes
                         if (!subScene)
                         {
                             var sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(path);
-                            subScene = new GameObject().AddComponent<SubScene>();
+                            var go = new GameObject { name = sceneAsset.name };
+                            subScene = go.AddComponent<SubScene>();
                             subScene.AutoLoadScene = false;
                             subScene.SceneAsset = sceneAsset;
                             TempSubScenes[subScene.SceneGUID] = subScene;
