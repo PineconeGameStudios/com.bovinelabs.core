@@ -309,7 +309,7 @@ namespace BovineLabs.Core.Editor.SubScenes
 
         private static bool AlreadyExists(SceneAsset scene)
         {
-            var subScenes = Object.FindObjectsByType<SubScene>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var subScenes = Object.FindObjectsByType<SubScene>(FindObjectsInactive.Include);
 
             foreach (var subscene in subScenes)
             {
@@ -340,7 +340,7 @@ namespace BovineLabs.Core.Editor.SubScenes
         {
             var scenes = new Dictionary<Hash128, SubScene?>();
 
-            var subScenes = Object.FindObjectsByType<SubScene>(FindObjectsSortMode.None);
+            var subScenes = Object.FindObjectsByType<SubScene>();
             foreach (var s in subScenes)
             {
                 scenes.Add(s.SceneGUID, s);

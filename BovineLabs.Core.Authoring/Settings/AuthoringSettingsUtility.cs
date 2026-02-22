@@ -10,6 +10,7 @@ namespace BovineLabs.Core.Authoring.Settings
     using BovineLabs.Core.Settings;
     using UnityEditor;
     using UnityEngine;
+    using Object = UnityEngine.Object;
 
     /// <summary> Utility for setting up and getting settings. </summary>
     public static class AuthoringSettingsUtility
@@ -25,7 +26,7 @@ namespace BovineLabs.Core.Authoring.Settings
         {
             var type = typeof(T);
 
-            if (CachedSettings.TryGetValue(type, out var cached))
+            if (CachedSettings.TryGetValue(type, out var cached) && cached as Object != null)
             {
                 return (T)cached;
             }
@@ -36,7 +37,7 @@ namespace BovineLabs.Core.Authoring.Settings
                 throw new Exception($"Settings not found for {typeof(T)}, ensure they've been created by opening the settings window");
             }
 
-            CachedSettings.Add(type, settings!);
+            CachedSettings[type] = settings!;
             return settings!;
         }
 

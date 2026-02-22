@@ -47,7 +47,7 @@ namespace BovineLabs.Core.Editor.UI
         {
             viewModels.Clear();
 
-            var documents = Object.FindObjectsByType<UIDocument>(FindObjectsSortMode.None).Where(d => d.rootVisualElement != null).ToArray();
+            var documents = Object.FindObjectsByType<UIDocument>().Where(d => d.rootVisualElement != null).ToArray();
 
             foreach (var d in documents)
             {

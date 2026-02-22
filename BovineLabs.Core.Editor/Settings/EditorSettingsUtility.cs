@@ -39,7 +39,7 @@ namespace BovineLabs.Core.Editor.Settings
         /// <exception cref="Exception"> Thrown if more than 1 instance found in project. </exception>
         public static ISettings GetSettings(Type type)
         {
-            if (CachedSettings.TryGetValue(type, out var cached) && cached != null)
+            if (CachedSettings.TryGetValue(type, out var cached) && cached as Object != null)
             {
                 return cached;
             }

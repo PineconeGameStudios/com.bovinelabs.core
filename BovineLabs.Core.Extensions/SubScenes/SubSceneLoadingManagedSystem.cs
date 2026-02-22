@@ -62,7 +62,7 @@ namespace BovineLabs.Core.SubScenes
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            var subScenes = Object.FindObjectsByType<SubScene>(FindObjectsSortMode.None);
+            var subScenes = Object.FindObjectsByType<SubScene>();
 
             foreach (var subScene in subScenes)
             {
@@ -78,7 +78,7 @@ namespace BovineLabs.Core.SubScenes
 
         private void LoadAllExistingSubScenes()
         {
-            var subScenes = Object.FindObjectsByType<SubScene>(FindObjectsSortMode.None);
+            var subScenes = Object.FindObjectsByType<SubScene>();
 
             foreach (var subScene in subScenes)
             {
