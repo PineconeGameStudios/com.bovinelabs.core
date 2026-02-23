@@ -432,14 +432,36 @@ namespace BovineLabs.FacetGenerator
                 resolvedChunk.AddProperty(field.ResolvedFieldName, Accessibility.Public).SetType(field.ResolvedFieldTypeName);
             }
 
+            var tryGet = resolvedChunk.AddMethod("TryGet", Accessibility.Public).WithReturnType("bool");
+            tryGet.AddParameter("int", "index");
+            tryGet.AddParameter($"out {data.TypeName}", "facet");
+            tryGet.WithSummary($"Attempts to get {data.TypeName} for an entity in the chunk by index.")
+                .WithParameterDoc("index", "Entity index in the chunk.")
+                .WithParameterDoc("facet", "Resolved facet when all required fields are available.");
+            tryGet.WithBody(body =>
+            {
+                body.AppendLine("facet = default;");
+                body.NewLine();
+
+                foreach (var field in data.Fields)
+                {
+                    WriteResolvedAcquisition(body, field, true);
+                }
+
+                body.AppendLine($"facet = new {data.TypeName}({string.Join(", ", data.Fields.Select(f => f.ArgumentName))});");
+                body.AppendLine("return true;");
+            });
+
             var resolvedIndexer = resolvedChunk
                 .AddProperty("this[int index]", Accessibility.Public)
                 .SetType(data.TypeName)
                 .WithSummary($"Gets the {data.TypeName} for an entity in the chunk by index.");
 
-            var arguments = data.Fields.Select(GetResolvedArgument).ToArray();
-
-            resolvedIndexer.WithGetterExpression($"new {data.TypeName}({string.Join(", ", arguments)})");
+            resolvedIndexer.WithGetter(getter =>
+            {
+                getter.AppendLine("this.TryGet(index, out var facet);");
+                getter.AppendLine("return facet;");
+            });
         }
 
         private static void ResolveResolvedFieldNameConflicts(IReadOnlyList<FacetField> fields)
@@ -915,6 +937,122 @@ namespace BovineLabs.FacetGenerator
                     else
                     {
                         writer.AppendLine($"var {name} = {lookup}.GetEnabledRefRO<{field.ComponentTypeName}>(entity);");
+                    }
+
+                    break;
+            }
+        }
+
+        private static void WriteResolvedAcquisition(ICodeWriter writer, FacetField field, bool inTryGet)
+        {
+            var resolved = $"this.{field.ResolvedFieldName}";
+            var name = field.ArgumentName;
+
+            switch (field.Kind)
+            {
+                case FacetFieldKind.Entity:
+                    writer.AppendLine($"var {name} = {resolved}[index];");
+                    break;
+
+                case FacetFieldKind.EntityStorageInfo:
+                    writer.AppendLine($"var {name} = new EntityStorageInfo {{ Chunk = {resolved}, IndexInChunk = index }};");
+                    break;
+
+                case FacetFieldKind.EntityStorageInfoLookup:
+                case FacetFieldKind.ComponentLookup:
+                case FacetFieldKind.BufferLookup:
+                case FacetFieldKind.Singleton:
+                    writer.AppendLine($"var {name} = {resolved};");
+                    break;
+
+                case FacetFieldKind.Facet:
+                    if (field.IsOptional)
+                    {
+                        writer.AppendLine($"{resolved}.TryGet(index, out var {name});");
+                    }
+                    else if (inTryGet)
+                    {
+                        using (writer.Block($"if (!{resolved}.TryGet(index, out var {name}))"))
+                        {
+                            writer.AppendLine("facet = default;");
+                            writer.AppendLine("return false;");
+                        }
+                    }
+                    else
+                    {
+                        writer.AppendLine($"var {name} = {resolved}[index];");
+                    }
+
+                    break;
+
+                case FacetFieldKind.DynamicBuffer:
+                    if (field.IsOptional)
+                    {
+                        writer.AppendLine($"var {name} = {resolved}.Length != 0 ? {resolved}[index] : default;");
+                    }
+                    else if (inTryGet)
+                    {
+                        using (writer.Block($"if ({resolved}.Length == 0)"))
+                        {
+                            writer.AppendLine("facet = default;");
+                            writer.AppendLine("return false;");
+                        }
+
+                        writer.AppendLine($"var {name} = {resolved}[index];");
+                    }
+                    else
+                    {
+                        writer.AppendLine($"var {name} = {resolved}[index];");
+                    }
+
+                    break;
+
+                case FacetFieldKind.RefRW:
+                case FacetFieldKind.RefRO:
+                    var constructor = field.Kind == FacetFieldKind.RefRO
+                        ? $"new RefRO<{field.ComponentTypeName}>"
+                        : $"new RefRW<{field.ComponentTypeName}>";
+
+                    if (field.IsOptional)
+                    {
+                        writer.AppendLine($"var {name} = {resolved}.IsCreated ? {constructor}({resolved}, index) : default;");
+                    }
+                    else if (inTryGet)
+                    {
+                        using (writer.Block($"if (!{resolved}.IsCreated)"))
+                        {
+                            writer.AppendLine("facet = default;");
+                            writer.AppendLine("return false;");
+                        }
+
+                        writer.AppendLine($"var {name} = {constructor}({resolved}, index);");
+                    }
+                    else
+                    {
+                        writer.AppendLine($"var {name} = {constructor}({resolved}, index);");
+                    }
+
+                    break;
+
+                case FacetFieldKind.EnabledRefRW:
+                case FacetFieldKind.EnabledRefRO:
+                    var rw = field.Kind == FacetFieldKind.EnabledRefRW ? "RW" : "RO";
+                    if (field.IsOptional)
+                    {
+                        writer.AppendLine($"var {name} = {resolved}.GetOptionalEnabledRef{rw}<{field.ComponentTypeName}>(index);");
+                    }
+                    else if (inTryGet)
+                    {
+                        writer.AppendLine($"var {name} = {resolved}.GetOptionalEnabledRef{rw}<{field.ComponentTypeName}>(index);");
+                        using (writer.Block($"if (!{name}.IsValid)"))
+                        {
+                            writer.AppendLine("facet = default;");
+                            writer.AppendLine("return false;");
+                        }
+                    }
+                    else
+                    {
+                        writer.AppendLine($"var {name} = {resolved}.GetEnabledRef{rw}<{field.ComponentTypeName}>(index);");
                     }
 
                     break;
