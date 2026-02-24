@@ -50,8 +50,8 @@ namespace BovineLabs.Core.Editor.UI
         private static readonly Action<FontAsset, int> FontAssetAtlasPadding;
         private static readonly Action<FontAsset> FontAssetSortAllTables;
 
-        private TextField? characterSequence;
-        private static Shader? shaderRefMobileBitmap;
+        private TextField characterSequence;
+        private static Shader shaderRefMobileBitmap;
 
         private readonly List<Glyph> fontGlyphTable = new();
         private readonly List<Character> fontCharacterTable = new();
@@ -174,12 +174,12 @@ namespace BovineLabs.Core.Editor.UI
             };
         }
 
-        private static string PickAllCharsRangeFromFont(Font? font)
+        private static string PickAllCharsRangeFromFont(Font font)
         {
             var chars = string.Empty;
             if (font)
             {
-                TrueTypeFontImporter? fontImporter = null;
+                TrueTypeFontImporter fontImporter = null;
 
                 // A GLITCH: Unity's Font.CharacterInfo doesn't work properly on dynamic mode, we need to change it to Unicode first
                 if (font.dynamic)

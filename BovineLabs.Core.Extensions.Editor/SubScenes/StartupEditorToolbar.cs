@@ -19,7 +19,7 @@ namespace BovineLabs.Core.Editor.SubScenes
         private const string StartupPath = "BovineLabs/Startup";
         private const int MaxLength = 25;
 
-        private static MainToolbarDropdown? startupDropDown;
+        private static MainToolbarDropdown startupDropDown;
 
         static StartupEditorToolbar()
         {

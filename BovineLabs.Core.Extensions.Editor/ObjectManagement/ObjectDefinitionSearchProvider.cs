@@ -10,6 +10,7 @@ namespace BovineLabs.Core.Editor.ObjectManagement
     using BovineLabs.Core.Authoring.ObjectManagement;
     using BovineLabs.Core.Editor.Settings;
     using BovineLabs.Core.ObjectManagement;
+    using JetBrains.Annotations;
     using Unity.Editor.Bridge;
     using Unity.Mathematics;
     using UnityEditor;
@@ -19,7 +20,8 @@ namespace BovineLabs.Core.Editor.ObjectManagement
 
     public static class ObjectDefinitionSearchProvider
     {
-        private static QueryEngine<ObjectDefinitionDescriptor>? queryEngine;
+        [CanBeNull]
+        private static QueryEngine<ObjectDefinitionDescriptor> queryEngine;
 
         private static QueryEngine<ObjectDefinitionDescriptor> QueryEngine => queryEngine ??= SetupQueryEngine();
 
@@ -68,7 +70,7 @@ namespace BovineLabs.Core.Editor.ObjectManagement
         {
             var searchQuery = context.searchQuery;
 
-            ParsedQuery<ObjectDefinitionDescriptor>? query = null;
+            ParsedQuery<ObjectDefinitionDescriptor> query = null;
 
             if (!string.IsNullOrEmpty(searchQuery))
             {
@@ -157,7 +159,8 @@ namespace BovineLabs.Core.Editor.ObjectManagement
         private readonly struct ObjectDefinitionDescriptor
         {
             public readonly ObjectDefinition ObjectDefinition;
-            private static Dictionary<byte, string>? map;
+            [CanBeNull]
+            private static Dictionary<byte, string> map;
 
             public ObjectDefinitionDescriptor(ObjectDefinition objectDefinition)
             {

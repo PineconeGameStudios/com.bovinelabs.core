@@ -36,9 +36,9 @@ namespace BovineLabs.Core.Authoring.ObjectManagement
         private int categories;
 
         [SerializeField]
-        private GameObject? prefab;
+        private GameObject prefab;
 
-        public GameObject? Prefab
+        public GameObject Prefab
         {
             get => this.prefab;
             internal set => this.prefab = value;
@@ -58,12 +58,12 @@ namespace BovineLabs.Core.Authoring.ObjectManagement
             set => this.id = value;
         }
 
-        public static implicit operator int(ObjectDefinition? definition)
+        public static implicit operator int(ObjectDefinition definition)
         {
             return definition ? definition.id : 0;
         }
 
-        public static implicit operator ObjectId(ObjectDefinition? definition)
+        public static implicit operator ObjectId(ObjectDefinition definition)
         {
             return definition ? new ObjectId(definition.id) : default;
         }

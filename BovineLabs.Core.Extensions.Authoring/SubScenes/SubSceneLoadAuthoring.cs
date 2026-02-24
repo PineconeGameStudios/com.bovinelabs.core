@@ -13,7 +13,7 @@ namespace BovineLabs.Core.Authoring.SubScenes
     public class SubSceneLoadAuthoring : MonoBehaviour
     {
         [SerializeField]
-        private SubSceneSettings? settings;
+        private SubSceneSettings settings;
 
         private class Baker : Baker<SubSceneLoadAuthoring>
         {
@@ -38,7 +38,7 @@ namespace BovineLabs.Core.Authoring.SubScenes
                         continue;
                     }
 
-                    var entity = this.CreateAdditionalEntity(TransformUsageFlags.None);
+                    var entity = this.CreateAdditionalEntity(TransformUsageFlags.None, entityName: $"Scene Set {set.TargetWorld.ToString()}");
 
                     var commands = new BakerCommands(this, entity);
                     SubSceneAuthUtil.AddComponents(ref commands, set);

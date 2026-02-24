@@ -16,7 +16,7 @@ namespace BovineLabs.Core.Authoring.ObjectManagement
 
     public abstract class ObjectManagementSettingsBase : SettingsBase
     {
-        private Dictionary<GameObject, uint>? objectDefinitionMap;
+        private Dictionary<GameObject, uint> objectDefinitionMap;
 
         public abstract IReadOnlyCollection<ObjectDefinition> ObjectDefinitions { get; }
 

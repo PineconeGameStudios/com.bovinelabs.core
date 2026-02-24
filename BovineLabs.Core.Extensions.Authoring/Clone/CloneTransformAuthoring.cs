@@ -10,7 +10,7 @@ namespace BovineLabs.Core.Authoring.Clone
 
     public class CloneTransformAuthoring : MonoBehaviour
     {
-        public GameObject? Target;
+        public GameObject Target;
 
         private class CloneTransformBaker : Baker<CloneTransformAuthoring>
         {

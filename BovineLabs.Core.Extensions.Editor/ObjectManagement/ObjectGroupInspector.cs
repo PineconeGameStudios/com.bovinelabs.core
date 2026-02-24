@@ -15,7 +15,7 @@ namespace BovineLabs.Core.Editor.ObjectManagement
     [CustomEditor(typeof(ObjectGroup))]
     public class ObjectGroupInspector : ElementEditor
     {
-        private VisualElement? summary;
+        private VisualElement summary;
 
         protected override VisualElement CreateElement(SerializedProperty property)
         {
@@ -49,7 +49,7 @@ namespace BovineLabs.Core.Editor.ObjectManagement
             }
         }
 
-        private void CreateSummary(SerializedPropertyChangeEvent? evt)
+        private void CreateSummary(SerializedPropertyChangeEvent evt)
         {
             this.summary?.parent?.Remove(this.summary);
 

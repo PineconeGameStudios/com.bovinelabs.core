@@ -46,14 +46,14 @@ namespace BovineLabs.Core.Authoring.Settings
         /// <typeparam name="T"> The settings type. </typeparam>
         /// <returns> True if settings is created. </returns>
         /// <exception cref="Exception"> Thrown if more than 1 instance found in project. </exception>
-        public static bool TryGetSettings<T>(out T? settings)
+        public static bool TryGetSettings<T>(out T settings)
             where T : ScriptableObject, ISettings
         {
             var type = typeof(T);
             return TryGetSettings(type, out settings);
         }
 
-        private static bool TryGetSettings<T>(Type type, out T? settings)
+        private static bool TryGetSettings<T>(Type type, out T settings)
             where T : ScriptableObject, ISettings
         {
             var filter = type.Namespace == null ? type.Name : $"{type.Namespace}.{type.Name}";

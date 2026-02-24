@@ -15,11 +15,11 @@ namespace BovineLabs.Core.Authoring.ObjectManagement
     public class ObjectDefinitionAuthoring : MonoBehaviour
     {
         // TODO readonly
-        public ObjectDefinition? Definition;
+        public ObjectDefinition Definition;
 
         private class Baker : Baker<ObjectDefinitionAuthoring>
         {
-            private static Dictionary<byte, ComponentType>? categoryToComponentTypes;
+            private static Dictionary<byte, ComponentType> categoryToComponentTypes;
 
             public override void Bake(ObjectDefinitionAuthoring authoring)
             {

@@ -14,14 +14,14 @@ namespace BovineLabs.Core.Editor.SubScenes
     [CustomEditor(typeof(SubSceneSet))]
     public class SubSceneSetEditor : ElementEditor
     {
-        private SerializedProperty? isRequired;
+        private SerializedProperty isRequired;
 
-        private PropertyField? waitForLoadField;
-        private PropertyField? isRequiredField;
-        private PropertyField? autoLoadField;
+        private PropertyField waitForLoadField;
+        private PropertyField isRequiredField;
+        private PropertyField autoLoadField;
 
         /// <inheritdoc />
-        protected override VisualElement? CreateElement(SerializedProperty property)
+        protected override VisualElement CreateElement(SerializedProperty property)
         {
             switch (property.name)
             {

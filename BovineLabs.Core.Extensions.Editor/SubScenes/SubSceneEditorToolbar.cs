@@ -41,7 +41,8 @@ namespace BovineLabs.Core.Editor.SubScenes
         private static readonly Dictionary<Hash128, SubScene> TempSubScenes = new();
         private static readonly Dictionary<SceneAsset, SubScene> EditorSubScenes = new();
 
-        private static MainToolbarDropdown? sceneDropDown;
+        [CanBeNull]
+        private static MainToolbarDropdown sceneDropDown;
 
         static SubSceneEditorToolbar()
         {
@@ -338,7 +339,7 @@ namespace BovineLabs.Core.Editor.SubScenes
         private static void LivingBakingDropdown<T>(T menu)
             where T : IDropDown
         {
-            var scenes = new Dictionary<Hash128, SubScene?>();
+            var scenes = new Dictionary<Hash128, SubScene>();
 
             var subScenes = Object.FindObjectsByType<SubScene>();
             foreach (var s in subScenes)
@@ -389,7 +390,7 @@ namespace BovineLabs.Core.Editor.SubScenes
                 {
                     menu.AddItem(L10n.Tr(sceneAsset.ToString()), true, static data =>
                     {
-                        var (key, subScene) = (KeyValuePair<Hash128, SubScene?>)data;
+                        var (key, subScene) = (KeyValuePair<Hash128, SubScene>)data;
 
                         if (TempSubScenes.Remove(key))
                         {
@@ -415,7 +416,7 @@ namespace BovineLabs.Core.Editor.SubScenes
                 {
                     menu.AddItem(sceneAsset.name, false, static data =>
                     {
-                        var (key, subScene) = (KeyValuePair<Hash128, SubScene?>)data;
+                        var (key, subScene) = (KeyValuePair<Hash128, SubScene>)data;
 
                         var path = AssetDatabase.GUIDToAssetPath(key);
                         var scene = SceneManager.GetSceneByPath(path);

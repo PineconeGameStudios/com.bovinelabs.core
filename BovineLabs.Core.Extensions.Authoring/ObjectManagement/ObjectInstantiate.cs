@@ -13,7 +13,7 @@ namespace BovineLabs.Core.Authoring.ObjectManagement
     public partial class ObjectInstantiate : MonoBehaviour
     {
         [SerializeField]
-        private ObjectDefinition? definition;
+        private ObjectDefinition definition;
 
         private class InstantiateObjectBaker : Baker<ObjectInstantiate>
         {

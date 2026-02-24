@@ -26,9 +26,9 @@ namespace BovineLabs.Core.Authoring.ObjectManagement
         [ConfigVar("core.instantiate-replace", false, "Should object definition targets be replaced when dropping in scene")]
         private static readonly SharedStatic<bool> Replace = SharedStatic<bool>.GetOrCreate<ReplaceType>();
 
-        private ObjectDefinitionAuthoring? preview;
+        private ObjectDefinitionAuthoring preview;
         private GameObject[] previewChildren = Array.Empty<GameObject>();
-        private ObjectDefinition? previousDefinition;
+        private ObjectDefinition previousDefinition;
 
         public static void TryReplace(GameObject newGameObject)
         {

@@ -15,7 +15,7 @@ namespace BovineLabs.Core.Editor.SubScenes
     public class SubSceneSettingsEditor : ElementEditor
     {
         /// <inheritdoc />
-        protected override VisualElement? CreateElement(SerializedProperty property)
+        protected override VisualElement CreateElement(SerializedProperty property)
         {
             return property.name switch
             {

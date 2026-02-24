@@ -14,9 +14,9 @@ namespace BovineLabs.Testing
     {
         private bool jobsDebuggerWasEnabled;
         private PlayerLoopSystem previousPlayerLoop;
-        private World? previousWorld;
+        private World previousWorld;
 
-        private World? world;
+        private World world;
 
         protected World World => this.world!;
 

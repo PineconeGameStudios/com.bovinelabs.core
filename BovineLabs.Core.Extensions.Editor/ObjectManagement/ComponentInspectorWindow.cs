@@ -24,9 +24,9 @@ namespace BovineLabs.Core.Editor.ObjectManagement
         private const string RootUIPath = "Packages/com.bovinelabs.core/Editor Default Resources/ComponentInspectorWindow/";
         private static readonly UITemplate Template = new(RootUIPath + "ComponentInspectorWindow");
 
-        private DropdownField? categoryDropdown;
-        private DropdownField? componentDropdown;
-        private MultiColumnListView? listView;
+        private DropdownField categoryDropdown;
+        private DropdownField componentDropdown;
+        private MultiColumnListView listView;
 
         private ObjectDefinition[] definitions = Array.Empty<ObjectDefinition>();
         private Dictionary<string, Type> components = new();

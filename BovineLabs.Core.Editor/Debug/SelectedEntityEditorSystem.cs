@@ -47,7 +47,7 @@ namespace BovineLabs.Core.Editor
             this.entityLookup = new NativeParallelMultiHashMap<int, Entity>(1024, Allocator.Persistent);
 #endif
 
-            this.EntityManager.CreateEntity(typeof(SelectedEntity), typeof(SelectedEntities));
+            this.EntityManager.CreateEntity<SelectedEntity, SelectedEntities>("Selected Entity");
         }
 
         /// <inheritdoc/>

@@ -21,12 +21,9 @@ namespace BovineLabs.Core
         private Entity timeSingleton;
 
         /// <inheritdoc />
-        public unsafe void OnCreate(ref SystemState state)
+        public void OnCreate(ref SystemState state)
         {
-            var timeTypes = stackalloc ComponentType[2];
-            timeTypes[0] = ComponentType.ReadWrite<WorldTime>();
-            timeTypes[1] = ComponentType.ReadWrite<WorldTimeQueue>();
-            this.timeSingleton = state.EntityManager.CreateEntity(state.EntityManager.CreateArchetype(timeTypes, 2));
+            this.timeSingleton = state.EntityManager.CreateEntity<WorldTime, WorldTimeQueue>("World Time");
 
             if (state.WorldUnmanaged.SystemExists<Unity.Entities.UpdateWorldTimeSystem>())
             {

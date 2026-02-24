@@ -77,9 +77,9 @@ namespace BovineLabs.Core.Tests.Functions
         [BurstCompile]
         private unsafe struct TestFunction : IFunction<TestResult>
         {
-            public UpdateFunction? UpdateFunction => null;
+            public UpdateFunction UpdateFunction => null;
 
-            public DestroyFunction? DestroyFunction => null;
+            public DestroyFunction DestroyFunction => null;
 
             public ExecuteFunction ExecuteFunction => Execute;
 
