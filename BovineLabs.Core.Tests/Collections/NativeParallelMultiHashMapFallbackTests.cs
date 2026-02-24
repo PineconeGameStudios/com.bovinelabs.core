@@ -42,6 +42,88 @@ namespace BovineLabs.Core.Tests.Collections
             Assert.AreEqual(EntityCount, count);
         }
 
+        [Test]
+        public void Add_SingleEntryWithinCapacity_CanReadByKey()
+        {
+            var map = new NativeParallelMultiHashMapFallback<int, int>(1, Allocator.TempJob);
+            try
+            {
+                var writer = map.AsWriter();
+                writer.Add(7, 123);
+
+                var handle = map.Apply(default, out var reader);
+                handle.Complete();
+
+                Assert.IsTrue(reader.TryGetFirstValue(7, out var value, out _), "Expected to read entry written with Add()");
+                Assert.AreEqual(123, value);
+                Assert.IsFalse(reader.TryGetFirstValue(8, out _, out _), "Unexpected value found for missing key");
+            }
+            finally
+            {
+                map.Dispose();
+            }
+        }
+
+        [Test]
+        public void Add_MultipleEntriesSameKey_AllValuesReadable()
+        {
+            var map = new NativeParallelMultiHashMapFallback<int, int>(3, Allocator.TempJob);
+            try
+            {
+                var writer = map.AsWriter();
+                writer.Add(9, 10);
+                writer.Add(9, 20);
+                writer.Add(9, 30);
+
+                var handle = map.Apply(default, out var reader);
+                handle.Complete();
+
+                Assert.IsTrue(reader.TryGetFirstValue(9, out var value, out var it));
+
+                var count = 1;
+                var sum = value;
+                while (reader.TryGetNextValue(out value, ref it))
+                {
+                    count++;
+                    sum += value;
+                }
+
+                Assert.AreEqual(3, count, "All values for the same key should be readable");
+                Assert.AreEqual(60, sum, "Expected all values written with Add() for key 9");
+            }
+            finally
+            {
+                map.Dispose();
+            }
+        }
+
+        [Test]
+        public void Add_ReservedAndFallbackPaths_BothReadableByKey()
+        {
+            var map = new NativeParallelMultiHashMapFallback<int, int>(1, Allocator.TempJob);
+            try
+            {
+                var writer = map.AsWriter();
+                writer.Add(1, 100); // Should hit reserved path.
+                writer.Add(2, 200); // Should overflow to fallback path.
+                writer.Add(3, 300); // Should overflow to fallback path.
+
+                var handle = map.Apply(default, out var reader);
+                handle.Complete();
+
+                Assert.IsTrue(reader.TryGetFirstValue(1, out var value1, out _), "Reserved-path entry should be readable");
+                Assert.IsTrue(reader.TryGetFirstValue(2, out var value2, out _), "Fallback entry should be readable");
+                Assert.IsTrue(reader.TryGetFirstValue(3, out var value3, out _), "Fallback entry should be readable");
+                Assert.AreEqual(100, value1);
+                Assert.AreEqual(200, value2);
+                Assert.AreEqual(300, value3);
+            }
+            finally
+            {
+                map.Dispose();
+            }
+        }
+
         private partial struct TestSystem : ISystem
         {
             private NativeArray<Entity> entities;
