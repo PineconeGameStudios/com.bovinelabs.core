@@ -9,6 +9,7 @@ namespace BovineLabs.Core.Editor.SubScenes
     using BovineLabs.Core.ConfigVars;
     using BovineLabs.Core.Editor.Settings;
     using BovineLabs.Core.EntityCommands;
+    using BovineLabs.Core.Extensions;
     using BovineLabs.Core.Groups;
     using BovineLabs.Core.SubScenes;
     using Unity.Burst;
@@ -42,7 +43,7 @@ namespace BovineLabs.Core.Editor.SubScenes
 
             this.set = sets[index];
 
-            this.EntityManager.CreateSingleton<RequireForLoading>();
+            this.EntityManager.CreateEntity<RequireForLoading>("RequireForLoading");
         }
 
         /// <inheritdoc/>
@@ -69,7 +70,7 @@ namespace BovineLabs.Core.Editor.SubScenes
 
             var commands = new EntityManagerCommands(this.EntityManager);
             commands.CreateEntity();
-            commands.SetName($"Scene Set {this.set.TargetWorld.ToString()}");
+            commands.SetName($"Scene: {SubSceneLoadFlagsUtil.FormatString(this.set.TargetWorld)}");
             SubSceneAuthUtil.AddComponents(ref commands, new SubSceneSetId(-2), this.set.TargetWorld, true, true, true, this.set.Scenes);
 
             this.Enabled = false;

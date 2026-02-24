@@ -38,7 +38,7 @@ namespace BovineLabs.Core.Authoring.SubScenes
                         continue;
                     }
 
-                    var entity = this.CreateAdditionalEntity(TransformUsageFlags.None, entityName: $"Scene Set {set.TargetWorld.ToString()}");
+                    var entity = this.CreateAdditionalEntity(TransformUsageFlags.None, entityName: $"Scene: {SubSceneLoadFlagsUtil.FormatString(set.TargetWorld)}");
 
                     var commands = new BakerCommands(this, entity);
                     SubSceneAuthUtil.AddComponents(ref commands, set);

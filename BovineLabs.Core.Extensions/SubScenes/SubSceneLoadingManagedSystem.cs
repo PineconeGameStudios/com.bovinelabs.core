@@ -93,8 +93,13 @@ namespace BovineLabs.Core.SubScenes
                 return;
             }
 
+            // TODO merge components/SubSceneAuthUtil
             var entity = this.EntityManager.CreateEntity(typeof(SubSceneLoadData), typeof(SubSceneEntity), typeof(SubSceneBuffer), typeof(LoadSubScene),
                 typeof(SubSceneLoaded));
+
+#if UNITY_EDITOR
+            this.EntityManager.SetName(entity, $"Scene: {SubSceneLoadFlagsUtil.FormatString(this.World.Flags)}");
+#endif
 
             this.EntityManager.SetComponentData(entity, new SubSceneLoadData
             {
