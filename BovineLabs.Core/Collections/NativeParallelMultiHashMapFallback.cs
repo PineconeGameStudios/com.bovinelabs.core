@@ -87,7 +87,7 @@ namespace BovineLabs.Core.Collections
                     var data = this.hashMap.m_Writer.m_Buffer;
                     UnsafeUtility.WriteArrayElement(data->keys, idx, key);
                     UnsafeUtility.WriteArrayElement(data->values, idx, item);
-                    UnsafeUtility.WriteArrayElement(data->next, idx, item.GetHashCode());
+                    UnsafeUtility.WriteArrayElement(data->next, idx, key.GetHashCode());
                 }
                 else
                 {
