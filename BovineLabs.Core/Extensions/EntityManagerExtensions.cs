@@ -4,6 +4,7 @@
 
 namespace BovineLabs.Core.Extensions
 {
+    using System;
     using BovineLabs.Core.Collections;
     using BovineLabs.Core.Iterators;
     using Unity.Collections;
@@ -306,6 +307,38 @@ namespace BovineLabs.Core.Extensions
             return true;
         }
 #endif
+
+        public static Entity CreateEntity<T>(this EntityManager em, T component, FixedString64Bytes name)
+            where T : unmanaged, IComponentData
+        {
+            var e = em.CreateEntity<T>(name);
+            em.SetComponentData(e, component);
+            return e;
+        }
+
+        public static Entity CreateEntity<T>(this EntityManager em, FixedString64Bytes name)
+            where T : unmanaged
+        {
+            Span<ComponentType> s = stackalloc ComponentType[1];
+            s[0] = ComponentType.ReadWrite<T>();
+
+            var e = em.CreateEntity(s);
+            em.SetName(e, name);
+            return e;
+        }
+
+        public static Entity CreateEntity<T1, T2>(this EntityManager em, FixedString64Bytes name)
+            where T1 : unmanaged
+            where T2 : unmanaged
+        {
+            Span<ComponentType> s = stackalloc ComponentType[2];
+            s[0] = ComponentType.ReadWrite<T1>();
+            s[1] = ComponentType.ReadWrite<T2>();
+
+            var e = em.CreateEntity(s);
+            em.SetName(e, name);
+            return e;
+        }
 
         internal static SharedComponentDataFromIndex<T> GetSharedComponentDataFromIndex<T>(this EntityManager entityManager, bool isReadOnly = true)
             where T : struct, ISharedComponentData
