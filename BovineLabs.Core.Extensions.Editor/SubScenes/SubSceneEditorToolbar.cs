@@ -118,6 +118,7 @@ namespace BovineLabs.Core.Editor.SubScenes
                 if (!s.Value)
                 {
                     var scene = SceneManager.GetSceneByPath(AssetDatabase.GUIDToAssetPath(s.Key));
+                    EditorSceneManager.SaveScene(scene);
                     SceneManager.UnloadSceneAsync(scene);
                     TempSubScenes.Remove(s.Key);
                 }
