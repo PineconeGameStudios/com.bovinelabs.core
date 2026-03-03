@@ -98,7 +98,7 @@ namespace BovineLabs.Core.Pause
             ref var state = ref world.ResolveSystemStateRef(system);
             var type = SystemBaseRegistry.GetStructType(state.UnmanagedMetaIndex);
 
-            if (!typeof(IDisableWhilePaused).IsAssignableFrom(type) && !DisableWhilePaused.Contains(system.GetType()))
+            if (!typeof(IDisableWhilePaused).IsAssignableFrom(type) && !DisableWhilePaused.Contains(type))
             {
                 system.Update(world);
             }

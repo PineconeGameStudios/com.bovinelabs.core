@@ -19,7 +19,6 @@ namespace BovineLabs.Core.Authoring.ObjectManagement
     }
 
     // TODO MOD SUPPORT
-
     public interface ILookupAuthoring<TMap, TValue> : ILookupAuthoring
         where TMap : unmanaged, IDynamicHashMap<ObjectId, TValue>
         where TValue : unmanaged
