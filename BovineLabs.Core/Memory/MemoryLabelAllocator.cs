@@ -18,7 +18,7 @@ namespace BovineLabs.Core.Memory
     /// <summary>
     /// Custom allocator that routes allocations to <see cref="Allocator.Persistent"/> while attaching a specific <see cref="MemoryLabel"/> for tracking.
     /// </summary>
-    [BurstCompile(CompileSynchronously = true)]
+    [BurstCompile]
     public unsafe struct MemoryLabelAllocator : AllocatorManager.IAllocator
     {
         private const long MaximumAllocationBytes = 1L << 40;
