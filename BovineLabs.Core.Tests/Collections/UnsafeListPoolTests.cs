@@ -1,4 +1,4 @@
-// <copyright file="UnsafeListLockFreePoolTests.cs" company="BovineLabs">
+// <copyright file="UnsafeListPoolTests.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
@@ -14,12 +14,12 @@ namespace BovineLabs.Core.Tests.Collections
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
 
-    public class UnsafeListLockFreePoolTests
+    public class UnsafeListPoolTests
     {
         [Test]
-        public void GetOrCreate_WhenPoolIsEmpty_TracksMissAndAllocation()
+        public void GetOrCreate_WhenPoolIsEmpty_ReturnsValidList()
         {
-            var pool = new UnsafeListLockFreePool<int>(4, Allocator.Persistent);
+            var pool = new UnsafeListPool<int>(4, Allocator.Persistent);
 
             try
             {
@@ -28,20 +28,7 @@ namespace BovineLabs.Core.Tests.Collections
                 Assert.IsTrue(list.IsCreated);
                 Assert.AreEqual(0, list.Length);
 
-#if BL_LOCKFREE_POOL_METRICS
-                var metrics = pool.Metrics;
-                Assert.AreEqual(0, metrics.Hits);
-                Assert.AreEqual(1, metrics.Misses);
-                Assert.AreEqual(1, metrics.Allocations);
-#endif
-
                 pool.ReturnOrDispose(list);
-
-#if BL_LOCKFREE_POOL_METRICS
-                metrics = pool.Metrics;
-                Assert.AreEqual(1, metrics.Returned);
-                Assert.AreEqual(0, metrics.Disposed);
-#endif
             }
             finally
             {
@@ -52,28 +39,38 @@ namespace BovineLabs.Core.Tests.Collections
         [Test]
         public void ReturnOrDispose_WhenPoolIsFull_DisposesList()
         {
-            var pool = new UnsafeListLockFreePool<int>(1, Allocator.Persistent);
+            var pool = new UnsafeListPool<int>(1, Allocator.Persistent);
 
             try
             {
-                var first = CreateList(1);
-                var second = CreateList(2);
+                var i = 0;
+                while (true)
+                {
+                    var list = CreateList(1000 + i);
+                    if (!pool.TryAdd(list))
+                    {
+                        list.Dispose();
+                        break;
+                    }
 
-                Assert.IsTrue(pool.TryAdd(first));
+                    i++;
+                    if (i > 1024)
+                    {
+                        Assert.Fail("Pool did not reject adds within expected bounds.");
+                    }
+                }
 
-                pool.ReturnOrDispose(second);
+                const int marker = 99_999;
+                pool.ReturnOrDispose(CreateList(marker));
 
-#if BL_LOCKFREE_POOL_METRICS
-                var metrics = pool.Metrics;
-                Assert.AreEqual(1, metrics.Returned);
-                Assert.AreEqual(1, metrics.Disposed);
-#endif
+                var foundMarker = false;
+                while (pool.TryGet(out var pooled))
+                {
+                    foundMarker |= pooled[0] == marker;
+                    pooled.Dispose();
+                }
 
-                Assert.IsTrue(pool.TryGet(out var pooled));
-                Assert.AreEqual(1, pooled[0]);
-                pooled.Dispose();
-
-                Assert.IsFalse(pool.TryGet(out _));
+                Assert.IsFalse(foundMarker, "Overflow list should have been disposed instead of pooled.");
             }
             finally
             {
@@ -85,7 +82,7 @@ namespace BovineLabs.Core.Tests.Collections
         public void TryGet_ParallelConsumers_ReturnsEachListExactlyOnce()
         {
             const int count = 16 * 1024;
-            var pool = new UnsafeListLockFreePool<int>(count, Allocator.Persistent);
+            var pool = new UnsafeListPool<int>(count, Allocator.Persistent);
 
             try
             {
@@ -129,12 +126,6 @@ namespace BovineLabs.Core.Tests.Collections
                 {
                     Assert.AreEqual(1, seen[i], $"Unexpected pop count for value {i}");
                 }
-
-#if BL_LOCKFREE_POOL_METRICS
-                var metrics = pool.Metrics;
-                Assert.AreEqual(count, metrics.Hits);
-                Assert.AreEqual(1, metrics.Misses);
-#endif
             }
             finally
             {
@@ -146,7 +137,7 @@ namespace BovineLabs.Core.Tests.Collections
         public unsafe void TryGet_BurstIJobFor_ParallelConsumers_ReturnEachListExactlyOnce()
         {
             const int count = 16 * 1024;
-            var pool = new UnsafeListLockFreePool<int>(count, Allocator.Persistent);
+            var pool = new UnsafeListPool<int>(count, Allocator.Persistent);
             var seen = new NativeArray<int>(count, Allocator.TempJob);
             var failures = new NativeArray<int>(1, Allocator.TempJob);
 
@@ -171,11 +162,6 @@ namespace BovineLabs.Core.Tests.Collections
                 {
                     Assert.AreEqual(1, seen[i], $"Unexpected pop count for value {i}");
                 }
-
-#if BL_LOCKFREE_POOL_METRICS
-                var metrics = pool.Metrics;
-                Assert.AreEqual(count, metrics.Hits);
-#endif
             }
             finally
             {
@@ -192,7 +178,7 @@ namespace BovineLabs.Core.Tests.Collections
             return list;
         }
 
-        private static void DisposePool(UnsafeListLockFreePool<int> pool)
+        private static void DisposePool(UnsafeListPool<int> pool)
         {
             while (pool.TryGet(out var list))
             {
@@ -208,7 +194,7 @@ namespace BovineLabs.Core.Tests.Collections
         [BurstCompile]
         private unsafe struct BurstPopJob : IJobFor
         {
-            public UnsafeListLockFreePool<int> Pool;
+            public UnsafeListPool<int> Pool;
 
             [NativeDisableParallelForRestriction]
             public NativeArray<int> Seen;

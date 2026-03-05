@@ -1,4 +1,4 @@
-// <copyright file="UnsafeListLockFreePoolPerformanceTests.cs" company="BovineLabs">
+// <copyright file="UnsafeListPoolPerformanceTests.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
@@ -15,7 +15,7 @@ namespace BovineLabs.Core.Tests.Collections
     using Unity.Jobs;
     using Unity.PerformanceTesting;
 
-    public class UnsafeListLockFreePoolPerformanceTests
+    public class UnsafeListPoolPerformanceTests
     {
         private const int PoolSize = 16 * 1024;
         private const int WarmupCount = 3;
@@ -25,7 +25,7 @@ namespace BovineLabs.Core.Tests.Collections
         [Performance]
         public void LegacyUnmanagedPool_ParallelPopSerialPush()
         {
-            var pool = new UnmanagedPool<UnsafeList<int>>(PoolSize, Allocator.Persistent);
+            var pool = new LegacyUnmanagedPool<UnsafeList<int>>(PoolSize, Allocator.Persistent);
             var staging = new UnsafeList<int>[PoolSize];
 
             try
@@ -47,9 +47,9 @@ namespace BovineLabs.Core.Tests.Collections
 
         [Test]
         [Performance]
-        public void LockFreePool_ParallelPopSerialPush()
+        public void UnmanagedPool_ParallelPopSerialPush()
         {
-            var pool = new UnsafeListLockFreePool<int>(PoolSize, Allocator.Persistent);
+            var pool = new UnmanagedPool<UnsafeList<int>>(PoolSize, Allocator.Persistent);
             var staging = new UnsafeList<int>[PoolSize];
 
             try
@@ -58,7 +58,7 @@ namespace BovineLabs.Core.Tests.Collections
 
                 Measure
                     .Method(() => RunRound(pool, staging))
-                    .SampleGroup("LockFree UnsafeListPool")
+                    .SampleGroup("UnmanagedPool")
                     .WarmupCount(WarmupCount)
                     .MeasurementCount(MeasurementCount)
                     .Run();
@@ -73,7 +73,7 @@ namespace BovineLabs.Core.Tests.Collections
         [Performance]
         public void LegacyUnmanagedPool_BurstIJobFor_ParallelPopDispose()
         {
-            UnmanagedPool<UnsafeList<int>> pool = default;
+            LegacyUnmanagedPool<UnsafeList<int>> pool = default;
             NativeArray<int> failures = default;
 
             Measure
@@ -95,7 +95,7 @@ namespace BovineLabs.Core.Tests.Collections
                 .SampleGroup("Legacy UnmanagedPool Burst IJobFor")
                 .SetUp(() =>
                 {
-                    pool = new UnmanagedPool<UnsafeList<int>>(PoolSize, Allocator.Persistent);
+                    pool = new LegacyUnmanagedPool<UnsafeList<int>>(PoolSize, Allocator.Persistent);
                     FillPool(pool);
                     failures = new NativeArray<int>(1, Allocator.Persistent);
                 })
@@ -111,9 +111,9 @@ namespace BovineLabs.Core.Tests.Collections
 
         [Test]
         [Performance]
-        public void LockFreePool_BurstIJobFor_ParallelPopDispose()
+        public void UnmanagedPool_BurstIJobFor_ParallelPopDispose()
         {
-            UnsafeListLockFreePool<int> pool = default;
+            UnmanagedPool<UnsafeList<int>> pool = default;
             NativeArray<int> failures = default;
 
             Measure
@@ -121,7 +121,7 @@ namespace BovineLabs.Core.Tests.Collections
                 {
                     failures[0] = 0;
 
-                    new LockFreeBurstPopJob
+                    new UnmanagedBurstPopJob
                     {
                         Pool = pool,
                         Failures = failures,
@@ -129,13 +129,13 @@ namespace BovineLabs.Core.Tests.Collections
 
                     if (failures[0] != 0)
                     {
-                        throw new InvalidOperationException($"Lock-free burst pop had {failures[0]} failures.");
+                        throw new InvalidOperationException($"UnmanagedPool burst pop had {failures[0]} failures.");
                     }
                 })
-                .SampleGroup("LockFree UnsafeListPool Burst IJobFor")
+                .SampleGroup("UnmanagedPool Burst IJobFor")
                 .SetUp(() =>
                 {
-                    pool = new UnsafeListLockFreePool<int>(PoolSize, Allocator.Persistent);
+                    pool = new UnmanagedPool<UnsafeList<int>>(PoolSize, Allocator.Persistent);
                     FillPool(pool);
                     failures = new NativeArray<int>(1, Allocator.Persistent);
                 })
@@ -149,6 +149,14 @@ namespace BovineLabs.Core.Tests.Collections
                 .Run();
         }
 
+        private static void FillPool(LegacyUnmanagedPool<UnsafeList<int>> pool)
+        {
+            for (var i = 0; i < PoolSize; i++)
+            {
+                Assert.IsTrue(pool.TryAdd(CreateList(i)));
+            }
+        }
+
         private static void FillPool(UnmanagedPool<UnsafeList<int>> pool)
         {
             for (var i = 0; i < PoolSize; i++)
@@ -157,15 +165,7 @@ namespace BovineLabs.Core.Tests.Collections
             }
         }
 
-        private static void FillPool(UnsafeListLockFreePool<int> pool)
-        {
-            for (var i = 0; i < PoolSize; i++)
-            {
-                Assert.IsTrue(pool.TryAdd(CreateList(i)));
-            }
-        }
-
-        private static void RunRound(UnmanagedPool<UnsafeList<int>> pool, UnsafeList<int>[] staging)
+        private static void RunRound(LegacyUnmanagedPool<UnsafeList<int>> pool, UnsafeList<int>[] staging)
         {
             var ticket = 0;
             Parallel.For(
@@ -200,7 +200,7 @@ namespace BovineLabs.Core.Tests.Collections
             }
         }
 
-        private static void RunRound(UnsafeListLockFreePool<int> pool, UnsafeList<int>[] staging)
+        private static void RunRound(UnmanagedPool<UnsafeList<int>> pool, UnsafeList<int>[] staging)
         {
             var ticket = 0;
             Parallel.For(
@@ -230,7 +230,7 @@ namespace BovineLabs.Core.Tests.Collections
             {
                 if (!pool.TryAdd(staging[i]))
                 {
-                    throw new InvalidOperationException("Failed to return a list to the lock-free pool.");
+                    throw new InvalidOperationException("Failed to return a list to UnmanagedPool.");
                 }
             }
         }
@@ -240,6 +240,19 @@ namespace BovineLabs.Core.Tests.Collections
             var list = new UnsafeList<int>(1, Allocator.Persistent);
             list.Add(value);
             return list;
+        }
+
+        private static void DisposePool(LegacyUnmanagedPool<UnsafeList<int>> pool)
+        {
+            while (pool.TryGet(out var list))
+            {
+                if (list.IsCreated)
+                {
+                    list.Dispose();
+                }
+            }
+
+            pool.Dispose();
         }
 
         private static void DisposePool(UnmanagedPool<UnsafeList<int>> pool)
@@ -255,23 +268,10 @@ namespace BovineLabs.Core.Tests.Collections
             pool.Dispose();
         }
 
-        private static void DisposePool(UnsafeListLockFreePool<int> pool)
-        {
-            while (pool.TryGet(out var list))
-            {
-                if (list.IsCreated)
-                {
-                    list.Dispose();
-                }
-            }
-
-            pool.Dispose();
-        }
-
         [BurstCompile]
         private unsafe struct LegacyBurstPopJob : IJobFor
         {
-            public UnmanagedPool<UnsafeList<int>> Pool;
+            public LegacyUnmanagedPool<UnsafeList<int>> Pool;
 
             [NativeDisableParallelForRestriction]
             public NativeArray<int> Failures;
@@ -290,9 +290,9 @@ namespace BovineLabs.Core.Tests.Collections
         }
 
         [BurstCompile]
-        private unsafe struct LockFreeBurstPopJob : IJobFor
+        private unsafe struct UnmanagedBurstPopJob : IJobFor
         {
-            public UnsafeListLockFreePool<int> Pool;
+            public UnmanagedPool<UnsafeList<int>> Pool;
 
             [NativeDisableParallelForRestriction]
             public NativeArray<int> Failures;
