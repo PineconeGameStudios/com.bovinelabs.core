@@ -23,7 +23,7 @@ namespace BovineLabs.Core.Collections
         [NativeDisableUnsafePtrRestriction]
         private readonly int* length;
 
-#if BL_LOCKFREE_POOL_METRICS
+#if BL_UNMANAGED_POOL_METRICS
         [NativeDisableUnsafePtrRestriction]
         private readonly Counters* counters;
 #endif
@@ -37,7 +37,7 @@ namespace BovineLabs.Core.Collections
             this.buffer = (T*)UnsafeUtility.MallocTracked(sizeof(T) * capacity, UnsafeUtility.AlignOf<T>(), allocator, 0);
             this.length = (int*)UnsafeUtility.MallocTracked(sizeof(int), UnsafeUtility.AlignOf<int>(), allocator, 0);
             *this.length = 0;
-#if BL_LOCKFREE_POOL_METRICS
+#if BL_UNMANAGED_POOL_METRICS
             this.counters = (Counters*)UnsafeUtility.MallocTracked(sizeof(Counters), UnsafeUtility.AlignOf<Counters>(), allocator, 0);
             UnsafeUtility.MemClear(this.counters, sizeof(Counters));
 #endif
@@ -45,7 +45,7 @@ namespace BovineLabs.Core.Collections
 
         public bool IsCreated => this.buffer != null;
 
-#if BL_LOCKFREE_POOL_METRICS
+#if BL_UNMANAGED_POOL_METRICS
         public UnmanagedPoolMetrics Metrics =>
             new(
                 Volatile.Read(ref this.counters->Hits),
@@ -58,7 +58,7 @@ namespace BovineLabs.Core.Collections
         {
             UnsafeUtility.FreeTracked(this.buffer, this.allocator);
             UnsafeUtility.FreeTracked(this.length, this.allocator);
-#if BL_LOCKFREE_POOL_METRICS
+#if BL_UNMANAGED_POOL_METRICS
             UnsafeUtility.FreeTracked(this.counters, this.allocator);
 #endif
         }
@@ -76,7 +76,7 @@ namespace BovineLabs.Core.Collections
                 var currentLength = Volatile.Read(ref *this.length);
                 if (currentLength >= this.capacity)
                 {
-#if BL_LOCKFREE_POOL_METRICS
+#if BL_UNMANAGED_POOL_METRICS
                     Interlocked.Increment(ref this.counters->Rejected);
 #endif
                     return false;
@@ -85,7 +85,7 @@ namespace BovineLabs.Core.Collections
                 this.buffer[currentLength] = element;
                 if (Interlocked.CompareExchange(ref *this.length, currentLength + 1, currentLength) == currentLength)
                 {
-#if BL_LOCKFREE_POOL_METRICS
+#if BL_UNMANAGED_POOL_METRICS
                     Interlocked.Increment(ref this.counters->Returned);
 #endif
                     return true;
@@ -100,7 +100,7 @@ namespace BovineLabs.Core.Collections
                 var currentLength = Volatile.Read(ref *this.length);
                 if (currentLength <= 0)
                 {
-#if BL_LOCKFREE_POOL_METRICS
+#if BL_UNMANAGED_POOL_METRICS
                     Interlocked.Increment(ref this.counters->Misses);
 #endif
                     element = default;
@@ -111,7 +111,7 @@ namespace BovineLabs.Core.Collections
                 var nextElement = this.buffer[nextLength];
                 if (Interlocked.CompareExchange(ref *this.length, nextLength, currentLength) == currentLength)
                 {
-#if BL_LOCKFREE_POOL_METRICS
+#if BL_UNMANAGED_POOL_METRICS
                     Interlocked.Increment(ref this.counters->Hits);
 #endif
                     element = nextElement;
@@ -128,7 +128,7 @@ namespace BovineLabs.Core.Collections
             return newCapacity;
         }
 
-#if BL_LOCKFREE_POOL_METRICS
+#if BL_UNMANAGED_POOL_METRICS
         private struct Counters
         {
             public int Hits;
@@ -139,7 +139,7 @@ namespace BovineLabs.Core.Collections
 #endif
     }
 
-#if BL_LOCKFREE_POOL_METRICS
+#if BL_UNMANAGED_POOL_METRICS
     public readonly struct UnmanagedPoolMetrics
     {
         public UnmanagedPoolMetrics(int hits, int misses, int returned, int rejected)

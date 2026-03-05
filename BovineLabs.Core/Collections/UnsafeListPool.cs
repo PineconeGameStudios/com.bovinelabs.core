@@ -12,7 +12,7 @@ namespace BovineLabs.Core.Collections
     /// Pool for <see cref="UnsafeList{T}" /> that wraps <see cref="UnmanagedPool{T}" /> and provides list lifecycle helpers.
     /// </summary>
     /// <typeparam name="T">The element type in the pooled list.</typeparam>
-    public readonly unsafe struct UnsafeListPool<T> : IDisposable
+    public readonly struct UnsafeListPool<T> : IDisposable
         where T : unmanaged
     {
         private readonly UnmanagedPool<UnsafeList<T>> pool;
@@ -24,7 +24,7 @@ namespace BovineLabs.Core.Collections
 
         public bool IsCreated => this.pool.IsCreated;
 
-#if BL_LOCKFREE_POOL_METRICS
+#if BL_UNMANAGED_POOL_METRICS
         public UnmanagedPoolMetrics Metrics => this.pool.Metrics;
 #endif
 
