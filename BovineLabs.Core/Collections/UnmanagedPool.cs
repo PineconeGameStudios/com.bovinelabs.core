@@ -23,6 +23,9 @@ namespace BovineLabs.Core.Collections
         [NativeDisableUnsafePtrRestriction]
         private readonly int* length;
 
+        [NativeDisableUnsafePtrRestriction]
+        private readonly int* ready;
+
 #if BL_UNMANAGED_POOL_METRICS
         [NativeDisableUnsafePtrRestriction]
         private readonly Counters* counters;
@@ -36,7 +39,9 @@ namespace BovineLabs.Core.Collections
 
             this.buffer = (T*)UnsafeUtility.MallocTracked(sizeof(T) * capacity, UnsafeUtility.AlignOf<T>(), allocator, 0);
             this.length = (int*)UnsafeUtility.MallocTracked(sizeof(int), UnsafeUtility.AlignOf<int>(), allocator, 0);
+            this.ready = (int*)UnsafeUtility.MallocTracked(sizeof(int) * capacity, UnsafeUtility.AlignOf<int>(), allocator, 0);
             *this.length = 0;
+            UnsafeUtility.MemClear(this.ready, sizeof(int) * capacity);
 #if BL_UNMANAGED_POOL_METRICS
             this.counters = (Counters*)UnsafeUtility.MallocTracked(sizeof(Counters), UnsafeUtility.AlignOf<Counters>(), allocator, 0);
             UnsafeUtility.MemClear(this.counters, sizeof(Counters));
@@ -58,6 +63,7 @@ namespace BovineLabs.Core.Collections
         {
             UnsafeUtility.FreeTracked(this.buffer, this.allocator);
             UnsafeUtility.FreeTracked(this.length, this.allocator);
+            UnsafeUtility.FreeTracked(this.ready, this.allocator);
 #if BL_UNMANAGED_POOL_METRICS
             UnsafeUtility.FreeTracked(this.counters, this.allocator);
 #endif
@@ -67,7 +73,7 @@ namespace BovineLabs.Core.Collections
         /// Attempts to return an element to the pool.
         /// </summary>
         /// <remarks>
-        /// This path is intended for a single producer.
+        /// This path is lock-free and supports concurrent producers.
         /// </remarks>
         public bool TryAdd(T element)
         {
@@ -82,9 +88,11 @@ namespace BovineLabs.Core.Collections
                     return false;
                 }
 
-                this.buffer[currentLength] = element;
                 if (Interlocked.CompareExchange(ref *this.length, currentLength + 1, currentLength) == currentLength)
                 {
+                    this.buffer[currentLength] = element;
+                    Volatile.Write(ref this.ready[currentLength], 1);
+
 #if BL_UNMANAGED_POOL_METRICS
                     Interlocked.Increment(ref this.counters->Returned);
 #endif
@@ -108,9 +116,15 @@ namespace BovineLabs.Core.Collections
                 }
 
                 var nextLength = currentLength - 1;
-                var nextElement = this.buffer[nextLength];
                 if (Interlocked.CompareExchange(ref *this.length, nextLength, currentLength) == currentLength)
                 {
+                    while (Volatile.Read(ref this.ready[nextLength]) == 0)
+                    {
+                    }
+
+                    var nextElement = this.buffer[nextLength];
+                    Volatile.Write(ref this.ready[nextLength], 0);
+
 #if BL_UNMANAGED_POOL_METRICS
                     Interlocked.Increment(ref this.counters->Hits);
 #endif

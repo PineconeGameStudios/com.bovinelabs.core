@@ -30,6 +30,11 @@ namespace BovineLabs.Core.Collections
 
         public void Dispose()
         {
+            while (this.pool.TryGet(out var list))
+            {
+                list.Dispose();
+            }
+
             this.pool.Dispose();
         }
 
